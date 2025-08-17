@@ -24,9 +24,9 @@ async def selamla(ctx, *, yazilanyazi: str):
     await ctx.message.delete()
     await ctx.send("Maraba")
     
-TARGET_HOUR = 18   # 09:00'da mesaj atacak (24 saat formatı)
-TARGET_MINUTE = 31
-kanalid = 1404106504138915961  # Buraya hedef kanal ID'sini girin
+TARGET_HOUR = 12   # 09:00'da mesaj atacak (24 saat formatı)
+TARGET_MINUTE = 00
+kanalid = 1406708938375954673  # Buraya hedef kanal ID'sini girin
 
 @bot.command()
 @commands.has_permissions(administrator=True)
