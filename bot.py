@@ -48,6 +48,10 @@ async def on_member_join(member):
     channel = bot.get_channel(1382742472207368192)
     await channel.send(f"{member.mention} aramıza katıldı! Hoş geldin! <:selam:1384247246924677313>")
 
+    rol = member.guild.get_role(1382439552765001789)
+    if rol:
+        await member.add_roles(rol)
+
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
