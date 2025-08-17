@@ -9,6 +9,14 @@ import datetime
 from dotenv import load_dotenv
 
 
+
+
+
+load_dotenv()  # .env dosyasını yükler
+TOKEN = os.getenv("DISCORD_TOKEN")  # .env içindeki tokeni alır
+
+bot = commands.Bot(command_prefix="!")
+
 intents = discord.Intents.default()
 intents.message_content = True
 
