@@ -27,19 +27,26 @@ async def selamla(ctx, *, yazilanyazi: str):
 TARGET_HOUR = 12   # 09:00'da mesaj atacak (24 saat formatı)
 TARGET_MINUTE = 00
 kanalid = 1406708938375954673  # Buraya hedef kanal ID'sini girin
-
+"""
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def topla(ctx, sayi1: int, sayi2: int):
     toplam = sayi1 + sayi2
-    await ctx.send(f"Sonuç: {toplam}")
+    await ctx.send(f"Sonuç: {toplam}")"""
 
 @bot.event
 async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
     rastgele_anime_gonder.start(kanalid)
 
-
+@bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+    
+    #selamlar
+    if message.content.lower() in ["sa", "selam", "selamlar"]:
+        await message.channel.send("Aleyküm selam! Nasılsın? <:selam:1384247246924677313>")
 
 """@tasks.loop(seconds=30)
 async def deneme():
