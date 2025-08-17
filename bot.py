@@ -204,4 +204,4 @@ print(get_rastgele_anime())
 
 
 # Tokenini buraya yapıştır
-bot.run("TOKEN")
+bot.run(TOKEN)
