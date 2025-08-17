@@ -1,0 +1,2 @@
+regex:MTQwN[A-Za-z0-9._-]*
+DISCORD_TOKEN_REDACTED
