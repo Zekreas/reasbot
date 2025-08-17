@@ -39,6 +39,15 @@ async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
     rastgele_anime_gonder.start(kanalid)
 
+
+
+@bot.event
+async def on_member_join(member):
+    if member.bot:
+        return
+    channel = bot.get_channel(1382742472207368192)
+    await channel.send(f"{member.mention} aramıza katıldı! Hoş geldin! <:selam:1384247246924677313>")
+
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
