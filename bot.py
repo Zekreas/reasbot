@@ -14,7 +14,8 @@ TOKEN = os.getenv("DISCORD_TOKEN")  # .env içindeki tokeni alır
 
 intents = discord.Intents.default()
 intents.message_content = True
-
+intents.members = True  # Üyeleri izlemek için gerekli izin
+intents.guilds = True  # Sunucuları izlemek için gerekli izin
 # Komutlar için prefix (ön ek) belirliyoruz
 bot = commands.Bot(command_prefix="r!", intents=intents)
 
