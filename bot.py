@@ -1,3 +1,4 @@
+import os
 import json
 import discord
 from discord.ext import commands
@@ -7,7 +8,6 @@ import requests
 import asyncio
 import datetime
 from dotenv import load_dotenv
-
 
 
 
