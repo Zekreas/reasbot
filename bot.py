@@ -26,19 +26,13 @@ async def selamla(ctx, *, yazilanyazi: str):
     await ctx.send("Maraba")
     
 TARGET_HOUR = 12   # 09:00'da mesaj atacak (24 saat formatı)
-TARGET_MINUTE = 46
+TARGET_MINUTE = 54
 kanalid = 1406708938375954673  # Buraya hedef kanal ID'sini girin
-"""
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def topla(ctx, sayi1: int, sayi2: int):
-    toplam = sayi1 + sayi2
-    await ctx.send(f"Sonuç: {toplam}")"""
 
 @bot.event
 async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
-    rastgele_anime_gonder.start(kanalid)
+    rastgele_anime_gonder.start()
 
 @bot.event
 async def on_member_join(member):
@@ -56,32 +50,13 @@ async def on_message(message):
     if message.content.lower() in ["sa", "selam", "selamlar"]:
         await message.channel.send("Aleyküm selam! Nasılsın? <:selam:1384247246924677313>")
 
-"""@tasks.loop(seconds=30)
-async def deneme():
-    channel = bot.get_channel(kanalid)
-    await channel.send("Deneme mesajı")  # Kanalda deneme mesajı gönderiyoruz
-    print("Deneme mesajı gönderildi")  # Konsola mesaj yazdırıyoruz
-"""
-""" async def ornekembed(ctx):
-    embed = discord.Embed(
-        title="Başlık Buraya",
-        description="📝 Bu bir örnek açıklamadır. Soluna emoji ekledik!",
-        color=discord.Color.green()
-    )
-    
-    embed.set_footer(text="Alt bilgi buraya")
-    embed.set_image(url="https://i.imgur.com/xyz.png")  # İstersen sabit bir resim
-    
-    await ctx.send(embed=embed)
-"""
-
-
 
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
 
 @tasks.loop(seconds=30)
-async def rastgele_anime_gonder(kanalid: int):
+async def rastgele_anime_gonder():
+    kanalid = 1406708938375954673
     channel = bot.get_channel(kanalid)
     if channel is None:
         print(f"Kanal bulunamadı: {kanalid}")
