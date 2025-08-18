@@ -61,9 +61,10 @@ async def rastgele_anime_gonder():
     if channel is None:
         print(f"Kanal bulunamadı: {kanalid}")
         return
-
+    print("Task loop Çalıştı")
     now = datetime.datetime.now()
     if now.hour == TARGET_HOUR and now.minute == TARGET_MINUTE:
+        print("Gönderim zamanı geldi!")
         anime = get_rastgele_anime()
         puan = anime['score'] if anime['score'] is not None else 'Veri yok'
         rank = anime['rank'] if anime['rank'] is not None else 'Veri yok'
