@@ -26,7 +26,7 @@ async def selamla(ctx, *, yazilanyazi: str):
     await ctx.send("Maraba")
     
 TARGET_HOUR = 12   # 09:00'da mesaj atacak (24 saat formatı)
-TARGET_MINUTE = 00
+TARGET_MINUTE = 43
 kanalid = 1406708938375954673  # Buraya hedef kanal ID'sini girin
 """
 @bot.command()
@@ -39,13 +39,6 @@ async def topla(ctx, sayi1: int, sayi2: int):
 async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
     rastgele_anime_gonder.start(kanalid)
-
-async def on_member_update(before, after):
-    # Pending durumdan çıkınca (kuralları kabul ettiğinde)
-    if before.pending and not after.pending:
-        rol = after.guild.get_role(1382439552765001789)  # Üye rolü ID'si
-        if rol:
-            await after.add_roles(rol)
 
 @bot.event
 async def on_member_join(member):
