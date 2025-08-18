@@ -3,7 +3,7 @@ import json
 import discord
 from discord.ext import commands
 from discord.ext import tasks
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 import asyncio
 import datetime
@@ -85,7 +85,10 @@ async def rastgele_anime_gonder():
         return
     print("Task loop Çalıştı")
 
-    now = datetime.datetime.now()
+    now = datetime.utcnow() + timedelta(hours=3)
+    print(f"Şu an saat: {now.hour}, dakika: {now.minute}")
+    print(f"Hedef saat: {TARGET_HOUR}, hedef dakika: {TARGET_MINUTE}")
+    print(now.hour, now.minute)
     if now.hour == TARGET_HOUR and now.minute == TARGET_MINUTE:
         print("Gönderim zamanı geldi!")
         anime = get_rastgele_anime()
