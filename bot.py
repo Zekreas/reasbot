@@ -40,7 +40,12 @@ async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
     rastgele_anime_gonder.start(kanalid)
 
-
+async def on_member_update(before, after):
+    # Pending durumdan çıkınca (kuralları kabul ettiğinde)
+    if before.pending and not after.pending:
+        rol = after.guild.get_role(1382439552765001789)  # Üye rolü ID'si
+        if rol:
+            await after.add_roles(rol)
 
 @bot.event
 async def on_member_join(member):
@@ -48,10 +53,6 @@ async def on_member_join(member):
         return
     channel = bot.get_channel(1382742472207368192)
     await channel.send(f"{member.mention} aramıza katıldı! Hoş geldin! <:selam:1384247246924677313>")
-
-    rol = member.guild.get_role(1382439552765001789)
-    if rol:
-        await member.add_roles(rol)
 
 @bot.event
 async def on_message(message):
