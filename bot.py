@@ -78,7 +78,7 @@ def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
 
 @tasks.loop(seconds=30)
-async def rastgele_anime_gonder():
+async def rastgele_anime_gonder(kanalid):
     channel = bot.get_channel(kanalid)
     if channel is None:
         print(f"Kanal bulunamadı: {kanalid}")
