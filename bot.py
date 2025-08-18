@@ -26,7 +26,7 @@ async def selamla(ctx, *, yazilanyazi: str):
     await ctx.send("Maraba")
     
 TARGET_HOUR = 12   # 09:00'da mesaj atacak (24 saat formatı)
-TARGET_MINUTE = 54
+TARGET_MINUTE = 57
 kanalid = 1406708938375954673  # Buraya hedef kanal ID'sini girin
 
 @bot.event
@@ -49,6 +49,24 @@ async def on_message(message):
     #selamlar
     if message.content.lower() in ["sa", "selam", "selamlar"]:
         await message.channel.send("Aleyküm selam! Nasılsın? <:selam:1384247246924677313>")
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def zaman(ctx, saat: int, dakika: int):
+    """Yalnızca yöneticiler mesaj atılacak zamanı değiştirebilir"""
+    global TARGET_HOUR, TARGET_MINUTE
+    if 0 <= saat <= 23 and 0 <= dakika <= 59:
+        TARGET_HOUR = saat
+        TARGET_MINUTE = dakika
+        await ctx.send(f"Mesaj gönderme zamanı ayarlandı: {TARGET_HOUR:02}:{TARGET_MINUTE:02}")
+    else:
+        await ctx.send("Geçersiz saat veya dakika! 0-23 saat, 0-59 dakika olmalı.")
+
+# Yönetici olmayan kullanıcılar için özel hata mesajı
+@zaman.error
+async def zaman_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("❌ Bu komutu kullanmak için yönetici yetkisine sahip olmalısın!")
 
 
 def kanalbulunamadi(ctx):
