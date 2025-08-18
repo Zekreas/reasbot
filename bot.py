@@ -74,6 +74,7 @@ async def on_message(message):
     await bot.process_commands(message)  # Komutları çalıştırır
 
 
+
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
 
@@ -95,11 +96,13 @@ async def rastgele_anime_gonder():
         puan = anime['score'] if anime['score'] is not None else 'Veri yok'
         rank = anime['rank'] if anime['rank'] is not None else 'Veri yok'
         bolumsayisi = anime['episodes'] if anime['episodes'] is not None else 'Veri yok'
-
+        
         description = f"""
         ⭐ Puan: {puan}
         🎬 Sıralama: {rank}
         📺 Bölüm Sayısı: {bolumsayisi}
+        <@&1406948083912278088>
+
         """
 
         embed = discord.Embed(
@@ -107,6 +110,7 @@ async def rastgele_anime_gonder():
             url=anime['url'],
             description=description,
             color=discord.Color.blue()
+            
         )
         embed.set_image(url=anime['image_url'])
 
@@ -139,6 +143,7 @@ async def embedyaz(ctx):
     ⭐ Puan: {puan}
     🎬 Sıralama: {rank}
     📺 Bölüm Sayısı: {bolumsayisi}
+    <@&1406948083912278088>
     """
 
     embed = discord.Embed(
