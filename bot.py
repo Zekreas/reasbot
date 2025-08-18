@@ -63,14 +63,15 @@ async def on_member_join(member):
     await channel.send(f"{member.mention} aramıza katıldı! Hoş geldin! <:selam:1384247246924677313>")
 
 @bot.event
+@bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
     
-    #selamlar
     if message.content.lower() in ["sa", "selam", "selamlar"]:
         await message.channel.send("Aleyküm selam! Nasılsın? <:selam:1384247246924677313>")
-
+    
+    await bot.process_commands(message)  # Komutları çalıştırır
 
 
 def kanalbulunamadi(ctx):
