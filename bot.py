@@ -53,7 +53,7 @@ async def zaman_error(ctx, error):
 @bot.event
 async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
-    rastgele_anime_gonder.start(kanalid)
+    rastgele_anime_gonder.start()
 
 @bot.event
 async def on_member_join(member):
@@ -78,12 +78,13 @@ def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
 
 @tasks.loop(seconds=30)
-async def rastgele_anime_gonder(kanalid):
+async def rastgele_anime_gonder():
     channel = bot.get_channel(kanalid)
     if channel is None:
         print(f"Kanal bulunamadı: {kanalid}")
         return
     print("Task loop Çalıştı")
+
     now = datetime.datetime.now()
     if now.hour == TARGET_HOUR and now.minute == TARGET_MINUTE:
         print("Gönderim zamanı geldi!")
@@ -120,7 +121,8 @@ async def rastgele_anime_gonder(kanalid):
 
         # Aynı dakikada tekrar tekrar göndermemesi için bekletiyoruz
         await asyncio.sleep(60)      
-
+    else:
+        print("Henüz zamanı değil")  # if içine girmezse bunu yazdırır
 
 @bot.command()
 @commands.has_permissions(administrator=True)
