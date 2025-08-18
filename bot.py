@@ -6,7 +6,7 @@ from discord.ext import tasks
 from datetime import datetime, timedelta
 import requests
 import asyncio
-import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 load_dotenv()  # .env dosyasını yükler
