@@ -53,7 +53,7 @@ async def zaman_error(ctx, error):
 @bot.event
 async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
-    rastgele_anime_gonder.start()
+    rastgele_anime_gonder.start(kanalid)
 
 @bot.event
 async def on_member_join(member):
@@ -79,7 +79,6 @@ def kanalbulunamadi(ctx):
 
 @tasks.loop(seconds=30)
 async def rastgele_anime_gonder():
-    kanalid = 1406708938375954673
     channel = bot.get_channel(kanalid)
     if channel is None:
         print(f"Kanal bulunamadı: {kanalid}")
