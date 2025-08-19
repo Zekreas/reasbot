@@ -48,7 +48,38 @@ async def zaman_error(ctx, error):
     if isinstance(error, commands.MissingPermissions):
         await ctx.send("❌ Bu komutu kullanmak için yönetici yetkisine sahip olmalısın!")
 
+@bot.command()
+@commands.has_permissions(ban_members=True)
+async def topluban(ctx, *user_ids: int):
+    banned = []
+    for uid in user_ids:
+        try:
+            user = await bot.fetch_user(uid)
+            await ctx.guild.ban(user, reason="Toplu ban")
+            banned.append(str(uid))
+        except Exception as e:
+            await ctx.send(f"{uid} banlanamadı: {e}")
+    await ctx.send(f"Banlananlar: {', '.join(banned)}")
 
+
+
+@bot.event
+async def on_message(message):
+    # Botun kendi mesajlarını kontrol etmesin
+    if message.author.bot:
+        return  
+
+    # Karakter sınırı (burayı istediğin gibi değiştirebilirsin, örn. 400 / 600)
+    limit = 400  
+
+    if len(message.content) > limit:
+        await message.delete()
+        await message.channel.send(
+            f"{message.author.mention} mesajın çok uzun olduğu için silindi! (limit: {limit} karakter)"
+        )
+
+    # Diğer komutların da çalışabilmesi için
+    await bot.process_commands(message)
 
 @bot.event
 async def on_ready():
