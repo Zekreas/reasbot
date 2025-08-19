@@ -73,22 +73,21 @@ async def on_message(message):
     if message.content.lower() in ["sa", "selam", "selamlar"]:
         await message.channel.send("Aleyküm selam! Nasılsın? <:selam:1384247246924677313>")
 
-    # 2) Uzun mesaj kontrolü
-    limit = 400  # karakter sınırı, istersen değiştirebilirsin
+    limit = 400  # karakter sınırı
     if len(message.content) > limit:
-        await message.delete()
-        try:
-            # Öncelikle DM ile uyar
-            await message.author.send(
-                f"**Mesajın çok uzun olduğu için silindi!**"
-            )
-        except:
-            # DM kapalıysa kanalda uyarı verir
-            await message.channel.send(
-                f"{message.author.mention} mesajın çok uzun olduğu için silindi!"
-            )
+        if not message.author.guild_permissions.manage_messages:  
+            # Eğer yetkisi yoksa, mesajı sil
+            await message.delete()
+            try:
+                await message.author.send(
+                    f"**Mesajın çok uzun olduğu için silindi!**"
+                )
+            except:
+                await message.channel.send(
+                    f"{message.author.mention} mesajın çok uzun olduğu için silindi!"
+                )
 
-    # 3) Komutların da çalışabilmesi için
+    # 3) Komutların çalışabilmesi için
     await bot.process_commands(message)
 
 
