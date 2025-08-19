@@ -80,7 +80,7 @@ async def on_message(message):
         try:
             # Öncelikle DM ile uyar
             await message.author.send(
-                f"Mesajın çok uzun olduğu için silindi!"
+                f"**Mesajın çok uzun olduğu için silindi!**"
             )
         except:
             # DM kapalıysa kanalda uyarı verir
