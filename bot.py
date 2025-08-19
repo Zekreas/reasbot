@@ -65,22 +65,33 @@ async def topluban(ctx, *user_ids: int):
 
 @bot.event
 async def on_message(message):
-    # Botun kendi mesajlarını kontrol etmesin
+    # Botun kendi mesajlarını kontrol etme
     if message.author.bot:
         return  
 
-    # Karakter sınırı (burayı istediğin gibi değiştirebilirsin, örn. 400 / 600)
-    limit = 400  
+    # 1) Selam cevabı
+    if message.content.lower() in ["sa", "selam", "selamlar"]:
+        await message.channel.send("Aleyküm selam! Nasılsın? <:selam:1384247246924677313>")
 
+    # 2) Uzun mesaj kontrolü
+    limit = 500  # karakter sınırı, istersen değiştirebilirsin
     if len(message.content) > limit:
         await message.delete()
-        await message.channel.send(
-            f"{message.author.mention} mesajın çok uzun olduğu için silindi! (limit: {limit} karakter)"
-        )
+        try:
+            # Öncelikle DM ile uyar
+            await message.author.send(
+                f"Mesajın çok uzun olduğu için silindi! (Limit: {limit} karakter)"
+            )
+        except:
+            # DM kapalıysa kanalda uyarı verir
+            await message.channel.send(
+                f"{message.author.mention} mesajın çok uzun olduğu için silindi! (Limit: {limit} karakter)"
+            )
 
-    # Diğer komutların da çalışabilmesi için
+    # 3) Komutların da çalışabilmesi için
     await bot.process_commands(message)
 
+    
 @bot.event
 async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
@@ -92,19 +103,6 @@ async def on_member_join(member):
         return
     channel = bot.get_channel(1382742472207368192)
     await channel.send(f"{member.mention} aramıza katıldı! Hoş geldin! <:selam:1384247246924677313>")
-
-@bot.event
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
-    
-    if message.content.lower() in ["sa", "selam", "selamlar"]:
-        await message.channel.send("Aleyküm selam! Nasılsın? <:selam:1384247246924677313>")
-    
-    await bot.process_commands(message)  # Komutları çalıştırır
-
-
 
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
