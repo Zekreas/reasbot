@@ -1,105 +1,132 @@
 {
     "data": {
-        "mal_id": 44940,
-        "url": "https://myanimelist.net/anime/44940/World_Trigger_3rd_Season",
+        "mal_id": 186,
+        "url": "https://myanimelist.net/anime/186/Initial_D_Second_Stage",
         "images": {
             "jpg": {
-                "image_url": "https://cdn.myanimelist.net/images/anime/1617/117474.jpg",
-                "small_image_url": "https://cdn.myanimelist.net/images/anime/1617/117474t.jpg",
-                "large_image_url": "https://cdn.myanimelist.net/images/anime/1617/117474l.jpg"
+                "image_url": "https://cdn.myanimelist.net/images/anime/8/12750.jpg",
+                "small_image_url": "https://cdn.myanimelist.net/images/anime/8/12750t.jpg",
+                "large_image_url": "https://cdn.myanimelist.net/images/anime/8/12750l.jpg"
             },
             "webp": {
-                "image_url": "https://cdn.myanimelist.net/images/anime/1617/117474.webp",
-                "small_image_url": "https://cdn.myanimelist.net/images/anime/1617/117474t.webp",
-                "large_image_url": "https://cdn.myanimelist.net/images/anime/1617/117474l.webp"
+                "image_url": "https://cdn.myanimelist.net/images/anime/8/12750.webp",
+                "small_image_url": "https://cdn.myanimelist.net/images/anime/8/12750t.webp",
+                "large_image_url": "https://cdn.myanimelist.net/images/anime/8/12750l.webp"
             }
         },
         "trailer": {
-            "youtube_id": "zps4vghwaVk",
-            "url": "https://www.youtube.com/watch?v=zps4vghwaVk",
-            "embed_url": "https://www.youtube.com/embed/zps4vghwaVk?enablejsapi=1&wmode=opaque&autoplay=1",
+            "youtube_id": null,
+            "url": null,
+            "embed_url": null,
             "images": {
-                "image_url": "https://img.youtube.com/vi/zps4vghwaVk/default.jpg",
-                "small_image_url": "https://img.youtube.com/vi/zps4vghwaVk/sddefault.jpg",
-                "medium_image_url": "https://img.youtube.com/vi/zps4vghwaVk/mqdefault.jpg",
-                "large_image_url": "https://img.youtube.com/vi/zps4vghwaVk/hqdefault.jpg",
-                "maximum_image_url": "https://img.youtube.com/vi/zps4vghwaVk/maxresdefault.jpg"
+                "image_url": null,
+                "small_image_url": null,
+                "medium_image_url": null,
+                "large_image_url": null,
+                "maximum_image_url": null
             }
         },
         "approved": true,
         "titles": [
             {
                 "type": "Default",
-                "title": "World Trigger 3rd Season"
+                "title": "Initial D Second Stage"
             },
             {
                 "type": "Japanese",
-                "title": "ワールドトリガー"
+                "title": "頭文字〈イニシャル〉D SECOND STAGE"
+            },
+            {
+                "type": "English",
+                "title": "Initial D Second Stage"
             },
             {
                 "type": "Spanish",
-                "title": "Word Trigger Temporada 3"
+                "title": "Initial D: Supera el Límite de Velocidad Temporada 2"
+            },
+            {
+                "type": "French",
+                "title": "Initial D Stage 2"
             }
         ],
-        "title": "World Trigger 3rd Season",
-        "title_english": null,
-        "title_japanese": "ワールドトリガー",
+        "title": "Initial D Second Stage",
+        "title_english": "Initial D Second Stage",
+        "title_japanese": "頭文字〈イニシャル〉D SECOND STAGE",
         "title_synonyms": [],
         "type": "TV",
         "source": "Manga",
-        "episodes": 14,
+        "episodes": 13,
         "status": "Finished Airing",
         "airing": false,
         "aired": {
-            "from": "2021-10-10T00:00:00+00:00",
-            "to": "2022-01-23T00:00:00+00:00",
+            "from": "1999-10-15T00:00:00+00:00",
+            "to": "2000-01-21T00:00:00+00:00",
             "prop": {
                 "from": {
-                    "day": 10,
+                    "day": 15,
                     "month": 10,
-                    "year": 2021
+                    "year": 1999
                 },
                 "to": {
-                    "day": 23,
+                    "day": 21,
                     "month": 1,
-                    "year": 2022
+                    "year": 2000
                 }
             },
-            "string": "Oct 10, 2021 to Jan 23, 2022"
+            "string": "Oct 15, 1999 to Jan 21, 2000"
         },
         "duration": "23 min per ep",
         "rating": "PG-13 - Teens 13 or older",
-        "score": 8.24,
-        "scored_by": 52151,
-        "rank": 357,
-        "popularity": 1858,
-        "members": 134207,
-        "favorites": 1253,
-        "synopsis": "At the Border Defense Agency's headquarters, the B-Rank Wars are underway as each team fights intensely to secure a spot in the upcoming Away Mission. Though Osamu Mikumo and the rest of Tamakoma-2 have pulled through thus far, the final rounds will require them to push far beyond the limits of their current abilities. Taking in a talented new member, the squad begins to train and develop new strategies, but, amid these efforts, the team is shaken by a heated dispute—one that could jeopardize their ticket to the Neighbor's dimension.\n\n[Written by MAL Rewrite]",
-        "background": "World Trigger 3rd Season was released on Blu-ray in two volumes and on DVD in four volumes from April 27, 2022, to June 22, 2022.",
+        "score": 8.19,
+        "scored_by": 147123,
+        "rank": 421,
+        "popularity": 1055,
+        "members": 253470,
+        "favorites": 1179,
+        "synopsis": "Accumulating an impressive series of victories with his AE86, Takumi Fujiwara has imposed himself as street racing's newest rising star. However, his newly found confidence of winning at his home turf of Mount Akina has been put in jeopardy by a new Emperor team exclusively using a car model favored by most professional racing pilots: the Mitsubishi four-wheel drive Lancer Evolutions—also known as Lan Evos. The Emperor team leader, Kyouichi Sudou, looks down on Takumi and regards him as an inferior pilot for driving an antique car that lacks the makings of a true modern race car. Kyouichi's elitist philosophy is also the reason why his team is only made of Lan Evo drivers.\n\nWill Takumi be able to keep his perfect track record intact against the highly skilled and mechanically superior Emperor team, or does his hot streak end here?\n\n[Written by MAL Rewrite]",
+        "background": "",
         "season": "fall",
-        "year": 2021,
+        "year": 1999,
         "broadcast": {
-            "day": "Sundays",
-            "time": "01:30",
+            "day": "Fridays",
+            "time": "01:55",
             "timezone": "Asia/Tokyo",
-            "string": "Sundays at 01:30 (JST)"
+            "string": "Fridays at 01:55 (JST)"
         },
         "producers": [
             {
-                "mal_id": 55,
+                "mal_id": 67,
                 "type": "anime",
-                "name": "TV Asahi",
-                "url": "https://myanimelist.net/anime/producer/55/TV_Asahi"
+                "name": "OB Planning",
+                "url": "https://myanimelist.net/anime/producer/67/OB_Planning"
+            },
+            {
+                "mal_id": 169,
+                "type": "anime",
+                "name": "Fuji TV",
+                "url": "https://myanimelist.net/anime/producer/169/Fuji_TV"
             }
         ],
-        "licensors": [],
+        "licensors": [
+            {
+                "mal_id": 102,
+                "type": "anime",
+                "name": "Funimation",
+                "url": "https://myanimelist.net/anime/producer/102/Funimation"
+            },
+            {
+                "mal_id": 484,
+                "type": "anime",
+                "name": "Tokyopop",
+                "url": "https://myanimelist.net/anime/producer/484/Tokyopop"
+            }
+        ],
         "studios": [
             {
-                "mal_id": 18,
+                "mal_id": 413,
                 "type": "anime",
-                "name": "Toei Animation",
-                "url": "https://myanimelist.net/anime/producer/18/Toei_Animation"
+                "name": "Pastel",
+                "url": "https://myanimelist.net/anime/producer/413/Pastel"
             }
         ],
         "genres": [
@@ -110,20 +137,27 @@
                 "url": "https://myanimelist.net/anime/genre/1/Action"
             },
             {
-                "mal_id": 24,
+                "mal_id": 8,
                 "type": "anime",
-                "name": "Sci-Fi",
-                "url": "https://myanimelist.net/anime/genre/24/Sci-Fi"
+                "name": "Drama",
+                "url": "https://myanimelist.net/anime/genre/8/Drama"
             }
         ],
         "explicit_genres": [],
-        "themes": [],
+        "themes": [
+            {
+                "mal_id": 3,
+                "type": "anime",
+                "name": "Racing",
+                "url": "https://myanimelist.net/anime/genre/3/Racing"
+            }
+        ],
         "demographics": [
             {
-                "mal_id": 27,
+                "mal_id": 42,
                 "type": "anime",
-                "name": "Shounen",
-                "url": "https://myanimelist.net/anime/genre/27/Shounen"
+                "name": "Seinen",
+                "url": "https://myanimelist.net/anime/genre/42/Seinen"
             }
         ]
     }

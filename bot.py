@@ -8,6 +8,11 @@ import requests
 import asyncio
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+from PIL import Image
+from io import BytesIO
+import aiohttp
+import random
+
 
 load_dotenv()  # .env dosyasını yükler
 TOKEN = os.getenv("DISCORD_TOKEN")  # .env içindeki tokeni alır
@@ -26,8 +31,11 @@ async def selamla(ctx, *, yazilanyazi: str):
     await ctx.send("Maraba")
     
 TARGET_HOUR = 12   # 09:00'da mesaj atacak (24 saat formatı)
-TARGET_MINUTE = 57
+TARGET_MINUTE = 0
 kanalid = 1406708938375954673  # Buraya hedef kanal ID'sini girin
+SHIP_TARGET_HOUR = 17   # 09:00'da mesaj atacak (24 saat formatı)
+SHIP_TARGET_MINUTE = 0
+SHIP_kanalid = 1408715714503774228  # Buraya hedef kanal ID'sini girin
 
 
 @bot.command()
@@ -49,6 +57,27 @@ async def zaman_error(ctx, error):
         await ctx.send("❌ Bu komutu kullanmak için yönetici yetkisine sahip olmalısın!")
 
 @bot.command()
+@commands.has_permissions(administrator=True)
+async def shipzaman(ctx, saat: int, dakika: int):
+    """Yalnızca yöneticiler mesaj atılacak zamanı değiştirebilir"""
+    global SHIP_TARGET_HOUR, SHIP_TARGET_MINUTE
+    if 0 <= saat <= 23 and 0 <= dakika <= 59:
+        SHIP_TARGET_HOUR = saat
+        SHIP_TARGET_MINUTE = dakika
+        await ctx.send(f"Ship için Mesaj gönderme zamanı ayarlandı: {SHIP_TARGET_HOUR:02}:{SHIP_TARGET_MINUTE:02}")
+    else:
+        await ctx.send("Geçersiz saat veya dakika! 0-23 saat, 0-59 dakika olmalı.")
+
+# Yönetici olmayan kullanıcılar için özel hata mesajı
+@shipzaman.error
+async def shipzaman_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("❌ Bu komutu kullanmak için yönetici yetkisine sahip olmalısın!")
+
+
+
+
+@bot.command()
 @commands.has_permissions(ban_members=True)
 async def topluban(ctx, *user_ids: int):
     banned = []
@@ -61,7 +90,7 @@ async def topluban(ctx, *user_ids: int):
             await ctx.send(f"{uid} banlanamadı: {e}")
     await ctx.send(f"Banlananlar: {', '.join(banned)}")
 
-
+channel_limits = {}
 
 @bot.event
 async def on_message(message):
@@ -73,28 +102,51 @@ async def on_message(message):
     if message.content.lower() in ["sa", "selam", "selamlar"]:
         await message.channel.send("Aleyküm selam! Nasılsın? <:selam:1384247246924677313>")
 
-    limit = 400  # karakter sınırı
-    if len(message.content) > limit:
-        if not message.author.guild_permissions.manage_messages:  
-            # Eğer yetkisi yoksa, mesajı sil
-            await message.delete()
-            try:
-                await message.author.send(
-                    f"**Mesajın çok uzun olduğu için silindi!**"
-                )
-            except:
-                await message.channel.send(
-                    f"{message.author.mention} mesajın çok uzun olduğu için silindi!"
-                )
+    
+    # Kanal için limit varsa uygula
+    if message.channel.id in channel_limits:
+        limit = channel_limits[message.channel.id]
 
-    # 3) Komutların çalışabilmesi için
+        if len(message.content) > limit:
+            if not message.author.guild_permissions.manage_messages:  
+                await message.delete()
+                try:
+                    await message.author.send(
+                        f"Mesajın silindi! Bu kanalda limit **{limit}** karakter."
+                    )
+                except:
+                    await message.channel.send(
+                        f"{message.author.mention} mesajın çok uzun olduğu için silindi! (Limit: {limit})"
+                    )
+
+    # Komutların çalışabilmesi için
     await bot.process_commands(message)
+
+# Limit ayarlama komutu
+@bot.command()
+@commands.has_permissions(manage_channels=True)  # sadece yetkililer ayarlasın
+async def limit(ctx, karakter: int):
+    channel_limits[ctx.channel.id] = karakter
+    await ctx.send(f"✅ Bu kanal için karakter limiti **{karakter}** olarak ayarlandı.")
+
+# Limiti kapatma komutu
+@bot.command()
+@commands.has_permissions(manage_channels=True)
+async def limitkapat(ctx):
+    if ctx.channel.id in channel_limits:
+        del channel_limits[ctx.channel.id]
+        await ctx.send("❌ Bu kanal için karakter limiti kaldırıldı.")
+    else:
+        await ctx.send("Bu kanalda zaten limit ayarlı değil.")
 
 
 @bot.event
 async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
     rastgele_anime_gonder.start()
+    print(f"Bot {len(bot.guilds)} sunucuda bulunuyor:")
+    for guild in bot.guilds:
+        print(f"- {guild.name} (ID: {guild.id})")
 
 @bot.event
 async def on_member_join(member):
@@ -105,6 +157,14 @@ async def on_member_join(member):
 
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
+
+
+
+
+
+
+
+
 
 @tasks.loop(seconds=30)
 async def rastgele_anime_gonder():
@@ -146,13 +206,6 @@ async def rastgele_anime_gonder():
 
         await mesaj.add_reaction("<:begendim:1404143732638613594>")
         await mesaj.add_reaction("<:begenmedim:1405956641991561246>")
-
-        thread = await channel.create_thread(
-            name="Yorumlar",
-            message=mesaj,
-            auto_archive_duration=1440
-        )
-        await thread.send("Burada bu anime hakkında yorum yapabilirsiniz. <:selam:1384247246924677313>")
 
         # Aynı dakikada tekrar tekrar göndermemesi için bekletiyoruz
         await asyncio.sleep(60)      
@@ -197,9 +250,62 @@ async def embedyaz(ctx):
     )
     await thread.send("Burada bu anime hakkında yorum yapabilirsiniz. <:selam:1384247246924677313>")
 
+def merge_images(url1, url2, filename="ship.png"):
+
+    img1 = Image.open(BytesIO(requests.get(url1).content))
+    img2 = Image.open(BytesIO(requests.get(url2).content))
+
+    # Aynı boyuta getir
+    img1 = img1.resize((450, 700))
+    img2 = img2.resize((450, 700))
+
+    # Yan yana birleştir (toplam 900x700)
+    merged = Image.new("RGB", (900, 700))
+    merged.paste(img1, (0, 0))
+    merged.paste(img2, (450, 0))
+
+    merged.save(filename)
+    return filename
 
 
+def get_rastgele_karakter():
+    url = "https://api.jikan.moe/v4/random/characters"
 
+    while True:
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            karakter = data['data']
+
+            # Karakterin adı varsa çık
+            if karakter.get('name'):
+                break
+
+        except requests.RequestException as e:
+            print(f"API isteği başarısız: {e}")
+            continue
+        except KeyError as e:
+            print(f"Veri yapısında eksik alan: {e}")
+            continue
+        except Exception as e:
+            print(f"Beklenmeyen hata: {e}")
+            continue
+
+    # Debugging için json kaydı
+    try:
+        with open("karakter.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+    except Exception as e:
+        print(f"Dosya yazma hatası: {e}")
+
+    return {
+        'name': karakter['name'],
+        'url': karakter['url'],
+        'about': karakter.get('about', 'Bilgi yok'),
+        'nicknames': karakter.get('nicknames', []),
+        'image_url': karakter['images']['jpg']['image_url']
+    }
 
 def get_rastgele_anime():
     url = "https://api.jikan.moe/v4/random/anime"
@@ -242,14 +348,6 @@ def get_rastgele_anime():
         'episodes': anime.get('episodes', 'Not available'),
         'image_url': anime['images']['jpg']['image_url']
     }
-
-
-
-
-
-
-
-
 
 print(get_rastgele_anime())
 

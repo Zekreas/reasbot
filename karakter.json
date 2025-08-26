@@ -1,0 +1,20 @@
+{
+    "data": {
+        "mal_id": 207001,
+        "url": "https://myanimelist.net/character/207001/Yuuta_Tamaru",
+        "images": {
+            "jpg": {
+                "image_url": "https://cdn.myanimelist.net/images/characters/2/466587.jpg"
+            },
+            "webp": {
+                "image_url": "https://cdn.myanimelist.net/images/characters/2/466587.webp",
+                "small_image_url": "https://cdn.myanimelist.net/images/characters/2/466587t.webp"
+            }
+        },
+        "name": "Yuuta Tamaru",
+        "name_kanji": "勇太",
+        "nicknames": [],
+        "favorites": 0,
+        "about": "Isamu's son."
+    }
+}
