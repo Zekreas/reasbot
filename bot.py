@@ -8,7 +8,6 @@ import requests
 import asyncio
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from PIL import Image
 from io import BytesIO
 import aiohttp
 import random
@@ -206,6 +205,13 @@ async def rastgele_anime_gonder():
 
         await mesaj.add_reaction("<:begendim:1404143732638613594>")
         await mesaj.add_reaction("<:begenmedim:1405956641991561246>")
+
+        thread = await channel.create_thread(
+            name="Yorumlar",
+            message=mesaj,
+            auto_archive_duration=1440
+        )
+        await thread.send("Burada bu anime hakkında yorum yapabilirsiniz. <:selam:1384247246924677313>")
 
         # Aynı dakikada tekrar tekrar göndermemesi için bekletiyoruz
         await asyncio.sleep(60)      
