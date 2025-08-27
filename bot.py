@@ -6,11 +6,11 @@ from discord.ext import tasks
 from datetime import datetime, timedelta
 import requests
 import asyncio
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from io import BytesIO
 import aiohttp
 import random
+import datetime
 
 
 load_dotenv()  # .env dosyasını yükler
