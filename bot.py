@@ -170,14 +170,14 @@ async def send_daily_report():
             await channel.send(f"📊 Bugün {today}\nHiç giriş/çıkış olmadı.")
 
 @bot.command()
-async def raporver():
+@commands.has_permissions(manage_channels=True)  # sadece yetkililer ayarlasın
+async def raporver(ctx):
     today = datetime.date.today().isoformat()
-    channel = bot.get_channel(123456789012345678)  # rapor gidecek kanal ID'si
     if today in daily_stats:
         data = daily_stats[today]
-        await channel.send(f"📊 Bugün {today}\n✅ Giren: {data['join']} kişi\n❌ Çıkan: {data['leave']} kişi")
+        await ctx.send(f"📊 Bugün {today}\n✅ Giren: {data['join']} kişi\n❌ Çıkan: {data['leave']} kişi")
     else:
-        await channel.send(f"📊 Bugün {today}\nHiç giriş/çıkış olmadı.")
+        await ctx.send(f"📊 Bugün {today}\nHiç giriş/çıkış olmadı.")
 
 
 
