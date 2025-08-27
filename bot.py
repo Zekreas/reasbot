@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 from io import BytesIO
 import aiohttp
 import random
-import datetime
 
 
 load_dotenv()  # .env dosyasını yükler
@@ -143,7 +142,6 @@ async def limitkapat(ctx):
 # Günlük kayıtlar (tarih: {"join": x, "leave": y})
 daily_stats = {}
 
-
 @bot.event
 async def on_member_join(member):
     if member.bot:
@@ -164,10 +162,11 @@ async def on_member_remove(member):
         daily_stats[today] = {"join": 0, "leave": 0}
     daily_stats[today]["leave"] += 1
 
+
 @tasks.loop(minutes=1)
 async def send_daily_report():
     now = datetime.now()
-    if now.hour == 23 and now.minute == 0:  # tam 21:00
+    if now.hour == 23 and now.minute == 0:  # tam 23:00
         today = date.today().isoformat()
         channel = bot.get_channel(123456789012345678)  # rapor gidecek kanal ID'si
         if today in daily_stats:
@@ -175,6 +174,7 @@ async def send_daily_report():
             await channel.send(f"📊 Bugün {today}\n✅ Giren: {data['join']} kişi\n❌ Çıkan: {data['leave']} kişi")
         else:
             await channel.send(f"📊 Bugün {today}\nHiç giriş/çıkış olmadı.")
+
 
 @bot.command()
 @commands.has_permissions(manage_channels=True)  # sadece yetkililer ayarlasın
@@ -187,7 +187,6 @@ async def raporver(ctx):
         await ctx.send(f"📊 Bugün {today}\nHiç giriş/çıkış olmadı.")
 
 
-
 @bot.event
 async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
@@ -197,7 +196,6 @@ async def on_ready():
     for guild in bot.guilds:
         print(f"- {guild.name} (ID: {guild.id})")
     send_daily_report.start()
-
 
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
