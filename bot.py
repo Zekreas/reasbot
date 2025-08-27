@@ -140,16 +140,56 @@ async def limitkapat(ctx):
     else:
         await ctx.send("Bu kanalda zaten limit ayarlı değil.")
 
+# Günlük kayıtlar (tarih: {"join": x, "leave": y})
+daily_stats = {}
+
+@bot.event
+async def on_member_join(member):
+    today = datetime.date.today().isoformat()
+    if today not in daily_stats:
+        daily_stats[today] = {"join": 0, "leave": 0}
+    daily_stats[today]["join"] += 1
+
+@bot.event
+async def on_member_remove(member):
+    today = datetime.date.today().isoformat()
+    if today not in daily_stats:
+        daily_stats[today] = {"join": 0, "leave": 0}
+    daily_stats[today]["leave"] += 1
+
+@tasks.loop(minutes=1)
+async def send_daily_report():
+    now = datetime.datetime.now()
+    if now.hour == 23 and now.minute == 0:  # tam 21:00
+        today = datetime.date.today().isoformat()
+        channel = bot.get_channel(123456789012345678)  # rapor gidecek kanal ID'si
+        if today in daily_stats:
+            data = daily_stats[today]
+            await channel.send(f"📊 Bugün {today}\n✅ Giren: {data['join']} kişi\n❌ Çıkan: {data['leave']} kişi")
+        else:
+            await channel.send(f"📊 Bugün {today}\nHiç giriş/çıkış olmadı.")
+
+@bot.command()
+async def raporver():
+    today = datetime.date.today().isoformat()
+    channel = bot.get_channel(123456789012345678)  # rapor gidecek kanal ID'si
+    if today in daily_stats:
+        data = daily_stats[today]
+        await channel.send(f"📊 Bugün {today}\n✅ Giren: {data['join']} kişi\n❌ Çıkan: {data['leave']} kişi")
+    else:
+        await channel.send(f"📊 Bugün {today}\nHiç giriş/çıkış olmadı.")
+
+
 
 @bot.event
 async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
     rastgele_anime_gonder.start()
-    gunaydin_mesaji.start()
+    gununhantigonder.start()
     print(f"Bot {len(bot.guilds)} sunucuda bulunuyor:")
     for guild in bot.guilds:
         print(f"- {guild.name} (ID: {guild.id})")
-
+    send_daily_report.start()
 @bot.event
 async def on_member_join(member):
     if member.bot:
