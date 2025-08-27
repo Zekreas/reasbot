@@ -3,7 +3,7 @@ import json
 import discord
 from discord.ext import commands
 from discord.ext import tasks
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import requests
 import asyncio
 from dotenv import load_dotenv
@@ -143,25 +143,32 @@ async def limitkapat(ctx):
 # Günlük kayıtlar (tarih: {"join": x, "leave": y})
 daily_stats = {}
 
+
 @bot.event
 async def on_member_join(member):
-    today = datetime.date.today().isoformat()
+    if member.bot:
+        return
+    channel = bot.get_channel(1382742472207368192)
+    await channel.send(f"{member.mention} aramıza katıldı! Hoş geldin! <:selam:1384247246924677313>")
+
+    today = date.today().isoformat()
     if today not in daily_stats:
         daily_stats[today] = {"join": 0, "leave": 0}
     daily_stats[today]["join"] += 1
 
+
 @bot.event
 async def on_member_remove(member):
-    today = datetime.date.today().isoformat()
+    today = date.today().isoformat()
     if today not in daily_stats:
         daily_stats[today] = {"join": 0, "leave": 0}
     daily_stats[today]["leave"] += 1
 
 @tasks.loop(minutes=1)
 async def send_daily_report():
-    now = datetime.datetime.now()
+    now = datetime.now()
     if now.hour == 23 and now.minute == 0:  # tam 21:00
-        today = datetime.date.today().isoformat()
+        today = date.today().isoformat()
         channel = bot.get_channel(123456789012345678)  # rapor gidecek kanal ID'si
         if today in daily_stats:
             data = daily_stats[today]
@@ -172,7 +179,7 @@ async def send_daily_report():
 @bot.command()
 @commands.has_permissions(manage_channels=True)  # sadece yetkililer ayarlasın
 async def raporver(ctx):
-    today = datetime.date.today().isoformat()
+    today = date.today().isoformat()
     if today in daily_stats:
         data = daily_stats[today]
         await ctx.send(f"📊 Bugün {today}\n✅ Giren: {data['join']} kişi\n❌ Çıkan: {data['leave']} kişi")
@@ -190,12 +197,7 @@ async def on_ready():
     for guild in bot.guilds:
         print(f"- {guild.name} (ID: {guild.id})")
     send_daily_report.start()
-@bot.event
-async def on_member_join(member):
-    if member.bot:
-        return
-    channel = bot.get_channel(1382742472207368192)
-    await channel.send(f"{member.mention} aramıza katıldı! Hoş geldin! <:selam:1384247246924677313>")
+
 
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
