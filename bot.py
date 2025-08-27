@@ -35,7 +35,9 @@ kanalid = 1406708938375954673  # Buraya hedef kanal ID'sini girin
 SHIP_TARGET_HOUR = 17   # 09:00'da mesaj atacak (24 saat formatı)
 SHIP_TARGET_MINUTE = 0
 SHIP_kanalid = 1408715714503774228  # Buraya hedef kanal ID'sini girin
-
+Gununhanti_TARGET_HOUR = 23   # 09:00'da mesaj atacak (24 saat formatı)
+Gununhanti_TARGET_MINUTE = 0
+gununhanti_kanalid = 1405472367068708935
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -143,6 +145,7 @@ async def limitkapat(ctx):
 async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
     rastgele_anime_gonder.start()
+    gunaydin_mesaji.start()
     print(f"Bot {len(bot.guilds)} sunucuda bulunuyor:")
     for guild in bot.guilds:
         print(f"- {guild.name} (ID: {guild.id})")
@@ -160,9 +163,27 @@ def kanalbulunamadi(ctx):
 
 
 
-
-
-
+@tasks.loop(seconds=30)
+async def gununhantigonder():
+    channel = bot.get_channel(gununhanti_kanalid)
+    if channel is None:
+        print(f"Kanal bulunamadı: {gununhanti_kanalid}")
+        return
+    print("Task loop Çalıştı Gunun Hanti")
+    now = datetime.utcnow() + timedelta(hours=3)
+    print(f"Şu an saat: {now.hour}, dakika: {now.minute}")
+    print(f"Hedef saat: {Gununhanti_TARGET_HOUR}, hedef dakika: {Gununhanti_TARGET_MINUTE}")
+    if now.hour == TARGET_HOUR and now.minute == TARGET_MINUTE: #Her gün saat 23 de sunucudaki kişi sayısı kanala gönderilecek
+        print("Günün Hantı Gönderim zamanı geldi!")
+        await channel.send(f"Bugün sunucumuzda toplam {channel.guild.member_count}")
+    else:
+        print("Henüz zamanı değil")  # if içine girmezse bunu yazdırır
+        
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def gununhanti(ctx):
+    channel = bot.get_channel(gununhanti_kanalid)
+    await channel.send(f"Bugün sunucumuzda toplam {channel.guild.member_count} kişi var! <:selam:1384247246924677313>")
 
 
 @tasks.loop(seconds=30)
