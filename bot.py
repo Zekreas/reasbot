@@ -122,23 +122,30 @@ async def on_message(message):
     # Komutların çalışabilmesi için
     await bot.process_commands(message)
 
-# Limit ayarlama komutu
+# Bot açılırken kaydedilmiş veriyi yükle
+if os.path.exists("limits.json"):
+    with open("limits.json", "r", encoding="utf-8") as f:
+        channel_limits = json.load(f)
+
 @bot.command()
-@commands.has_permissions(manage_channels=True)  # sadece yetkililer ayarlasın
+@commands.has_permissions(manage_channels=True)
 async def limit(ctx, karakter: int):
-    channel_limits[ctx.channel.id] = karakter
+    channel_limits[str(ctx.channel.id)] = karakter
+    with open("limits.json", "w", encoding="utf-8") as f:
+        json.dump(channel_limits, f, ensure_ascii=False, indent=4)
     await ctx.send(f"✅ Bu kanal için karakter limiti **{karakter}** olarak ayarlandı.")
 
-# Limiti kapatma komutu
 @bot.command()
 @commands.has_permissions(manage_channels=True)
 async def limitkapat(ctx):
-    if ctx.channel.id in channel_limits:
-        del channel_limits[ctx.channel.id]
+    if str(ctx.channel.id) in channel_limits:
+        del channel_limits[str(ctx.channel.id)]
+        with open("limits.json", "w", encoding="utf-8") as f:
+            json.dump(channel_limits, f, ensure_ascii=False, indent=4)
         await ctx.send("❌ Bu kanal için karakter limiti kaldırıldı.")
     else:
         await ctx.send("Bu kanalda zaten limit ayarlı değil.")
-
+        
 # Günlük kayıtlar (tarih: {"join": x, "leave": y})
 daily_stats = {}
 
