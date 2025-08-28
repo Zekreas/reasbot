@@ -172,6 +172,7 @@ async def send_daily_report():
         if today in daily_stats:
             data = daily_stats[today]
             await channel.send(f"📊 Bugün {today}\n✅ Giren: {data['join']} kişi\n❌ Çıkan: {data['leave']} kişi")
+            await asyncio.sleep(60) 
         else:
             await channel.send(f"📊 Bugün {today}\nHiç giriş/çıkış olmadı.")
 
@@ -183,6 +184,7 @@ async def raporver(ctx):
     if today in daily_stats:
         data = daily_stats[today]
         await ctx.send(f"📊 Bugün {today}\n✅ Giren: {data['join']} kişi\n❌ Çıkan: {data['leave']} kişi")
+        
     else:
         await ctx.send(f"📊 Bugün {today}\nHiç giriş/çıkış olmadı.")
 
@@ -213,11 +215,13 @@ async def gununhantigonder():
     now = datetime.utcnow() + timedelta(hours=3)
     print(f"Şu an saat: {now.hour}, dakika: {now.minute}")
     print(f"Hedef saat: {Gununhanti_TARGET_HOUR}, hedef dakika: {Gununhanti_TARGET_MINUTE}")
-    if now.hour == TARGET_HOUR and now.minute == TARGET_MINUTE: #Her gün saat 23 de sunucudaki kişi sayısı kanala gönderilecek
+    if now.hour == 23 and now.minute == 0: #Her gün saat 23 de sunucudaki kişi sayısı kanala gönderilecek
         print("Günün Hantı Gönderim zamanı geldi!")
         await channel.send(f"Bugün sunucumuzda toplam {channel.guild.member_count}")
+        await asyncio.sleep(60) 
     else:
         print("Henüz zamanı değil")  # if içine girmezse bunu yazdırır
+    
         
 @bot.command()
 @commands.has_permissions(administrator=True)
