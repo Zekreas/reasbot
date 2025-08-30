@@ -249,6 +249,9 @@ async def on_ready():
     for guild in bot.guilds:
         print(f"- {guild.name} (ID: {guild.id})")
     send_daily_report.start()
+    kisisayisisifirla.start()
+    load_data()
+    save_data()  # JSON dosyası artık sıfır değerlerle oluşacak
 
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
