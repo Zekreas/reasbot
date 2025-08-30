@@ -78,6 +78,38 @@ async def shipzaman_error(ctx, error):
 
 
 
+@bot.command()
+async def log(ctx):
+    try:
+        with open("kisi_log.json", "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if not data:
+            await ctx.send("📂 Log dosyası boş.")
+            return
+
+        mesajlar = []
+        for tarih, kayit in data.items():
+            giren = kayit.get("giren", 0)
+            cikan = kayit.get("cikan", 0)
+            mesajlar.append(f"📅 {tarih} → Katılan: {giren} | Çıkan: {cikan}")
+
+        # Discord mesaj limiti (2000 karakter) var, ona göre parçala
+        chunk = ""
+        for satir in mesajlar:
+            if len(chunk) + len(satir) + 1 > 2000:
+                await ctx.send(chunk)
+                chunk = satir + "\n"
+            else:
+                chunk += satir + "\n"
+
+        if chunk:
+            await ctx.send(chunk)
+
+    except FileNotFoundError:
+        await ctx.send("❌ Log dosyası bulunamadı.")
+    except json.JSONDecodeError:
+        await ctx.send("⚠️ Log dosyası bozuk veya boş.")
 
 @bot.command()
 @commands.has_permissions(ban_members=True)
