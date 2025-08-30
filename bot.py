@@ -37,6 +37,8 @@ SHIP_kanalid = 1408715714503774228  # Buraya hedef kanal ID'sini girin
 Gununhanti_TARGET_HOUR = 23   # 09:00'da mesaj atacak (24 saat formatı)
 Gununhanti_TARGET_MINUTE = 0
 gununhanti_kanalid = 1405472367068708935
+girenkisisayisi = 0
+cikankisisayisi = 0
 
 @bot.command()
 @commands.has_permissions(administrator=True)
