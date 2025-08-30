@@ -236,6 +236,7 @@ async def raporsifirla(ctx):
 @bot.command()
 @commands.has_permissions(manage_channels=True)
 async def raporver(ctx):
+    global girenkisisayisi, cikankisisayisi
     today = date.today().isoformat()
     await ctx.send(f"Bugün ({today}) katılan: {girenkisisayisi} | çıkan: {cikankisisayisi}")
 
