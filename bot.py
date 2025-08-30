@@ -109,7 +109,7 @@ async def log(ctx):
     except FileNotFoundError:
         await ctx.send("❌ Log dosyası bulunamadı.")
     except json.JSONDecodeError:
-        await ctx.send("⚠️ Log dosyası bozuk veya boş.")
+        await ctx.send("⚠️ Log dosyası bozuk veya boş.")b
 
 @bot.command()
 @commands.has_permissions(ban_members=True)
