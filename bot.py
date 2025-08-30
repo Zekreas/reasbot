@@ -146,54 +146,98 @@ async def limitkapat(ctx):
     else:
         await ctx.send("Bu kanalda zaten limit ayarlı değil.")
         
-# Günlük kayıtlar (tarih: {"join": x, "leave": y})
-daily_stats = {}
+DATA_FILE = "kisi_log.json"
+
+def load_data():
+    global girenkisisayisi, cikankisisayisi
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        today = date.today().isoformat()
+        if today in data:
+            girenkisisayisi = data[today].get("giren", 0)
+            cikankisisayisi = data[today].get("cikan", 0)
+    else:
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump({}, f, ensure_ascii=False, indent=4)
+
+
+def save_data():
+    today = date.today().isoformat()
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    else:
+        data = {}
+
+    if today not in data:
+        data[today] = {"giren": 0, "cikan": 0}
+
+    data[today]["giren"] = girenkisisayisi
+    data[today]["cikan"] = cikankisisayisi
+
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
 
 @bot.event
 async def on_member_join(member):
+    global girenkisisayisi
     if member.bot:
         return
     channel = bot.get_channel(1382742472207368192)
     await channel.send(f"{member.mention} aramıza katıldı! Hoş geldin! <:selam:1384247246924677313>")
 
-    today = date.today().isoformat()
-    if today not in daily_stats:
-        daily_stats[today] = {"join": 0, "leave": 0}
-    daily_stats[today]["join"] += 1
+    girenkisisayisi += 1
+    save_data()
 
 
 @bot.event
 async def on_member_remove(member):
-    today = date.today().isoformat()
-    if today not in daily_stats:
-        daily_stats[today] = {"join": 0, "leave": 0}
-    daily_stats[today]["leave"] += 1
+    global cikankisisayisi
+    cikankisisayisi += 1
+    save_data()
 
 
-@tasks.loop(minutes=1)
+@tasks.loop(seconds=30)
+async def kisisayisisifirla():
+    global girenkisisayisi, cikankisisayisi
+    now = datetime.utcnow() + timedelta(hours=3)
+    if now.hour == 0 and now.minute == 0:
+        girenkisisayisi = 0
+        cikankisisayisi = 0
+        save_data()
+        await asyncio.sleep(60)  # Aynı dakika içinde tekrar çalışmaması için
+
+
+@tasks.loop(seconds=30)
 async def send_daily_report():
-    now = datetime.now()
-    if now.hour == 23 and now.minute == 0:  # tam 23:00
+    now = datetime.utcnow() + timedelta(hours=3)
+    if now.hour == 23 and now.minute == 0:
         today = date.today().isoformat()
-        channel = bot.get_channel(123456789012345678)  # rapor gidecek kanal ID'si
-        if today in daily_stats:
-            data = daily_stats[today]
-            await channel.send(f"📊 Bugün {today}\n✅ Giren: {data['join']} kişi\n❌ Çıkan: {data['leave']} kişi")
-            await asyncio.sleep(60) 
-        else:
-            await channel.send(f"📊 Bugün {today}\nHiç giriş/çıkış olmadı.")
+        channel = bot.get_channel(123456789012345678)  # rapor kanalı
+        if channel:
+            await channel.send(f"Bugün ({today}) katılan: {girenkisisayisi} | çıkan: {cikankisisayisi}")
+            await asyncio.sleep(60)
+            save_data()
+        await asyncio.sleep(60)  # Aynı dakika içinde tekrar çalışmaması için
 
 
 @bot.command()
-@commands.has_permissions(manage_channels=True)  # sadece yetkililer ayarlasın
+@commands.has_permissions(administrator=True)
+async def raporsifirla(ctx):
+    global girenkisisayisi, cikankisisayisi
+    girenkisisayisi = 0
+    cikankisisayisi = 0
+    save_data()
+    await ctx.send("Günlük rapor sıfırlandı ve dosyaya kaydedildi.")
+
+
+@bot.command()
+@commands.has_permissions(manage_channels=True)
 async def raporver(ctx):
     today = date.today().isoformat()
-    if today in daily_stats:
-        data = daily_stats[today]
-        await ctx.send(f"📊 Bugün {today}\n✅ Giren: {data['join']} kişi\n❌ Çıkan: {data['leave']} kişi")
-        
-    else:
-        await ctx.send(f"📊 Bugün {today}\nHiç giriş/çıkış olmadı.")
+    await ctx.send(f"Bugün ({today}) katılan: {girenkisisayisi} | çıkan: {cikankisisayisi}")
 
 
 @bot.event
