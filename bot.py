@@ -184,23 +184,35 @@ DATA_FILE = "kisi_log.json"
 
 def load_data():
     global girenkisisayisi, cikankisisayisi
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        today = date.today().isoformat()
-        if today in data:
-            girenkisisayisi = data[today].get("giren", 0)
-            cikankisisayisi = data[today].get("cikan", 0)
-    else:
+    if not os.path.exists(DATA_FILE):
         with open(DATA_FILE, "w", encoding="utf-8") as f:
             json.dump({}, f, ensure_ascii=False, indent=4)
+        return
+
+    try:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError:
+        # Dosya bozuksa temizle
+        data = {}
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump({}, f, ensure_ascii=False, indent=4)
+
+    today = date.today().isoformat()
+    if today in data:
+        girenkisisayisi = data[today].get("giren", 0)
+        cikankisisayisi = data[today].get("cikan", 0)
+
 
 
 def save_data():
     today = date.today().isoformat()
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except json.JSONDecodeError:
+            data = {}
     else:
         data = {}
 
