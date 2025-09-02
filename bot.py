@@ -136,7 +136,7 @@ async def on_message(message):
 
         try:
             reply = await bot.wait_for("message", timeout=20.0, check=check)
-            await message.channel.send(f"{message.author.mention} **Teşekkürler, iyi olmana sevindim sevindim! 😄**")
+            await message.channel.send(f"{message.author.mention} **Teşekkürler, iyi olmana sevindim! 😄**")
         except asyncio.TimeoutError:
             # Eğer kullanıcı 20 saniye içinde cevap vermezse bir şey yapma
             pass
