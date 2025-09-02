@@ -22,11 +22,6 @@ intents.guilds = True  # Sunucuları izlemek için gerekli izin
 # Komutlar için prefix (ön ek) belirliyoruz
 bot = commands.Bot(command_prefix="r!", intents=intents)
 
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def selamla(ctx, *, yazilanyazi: str):
-    await ctx.message.delete()
-    await ctx.send("Maraba")
     
 TARGET_HOUR = 12   # 09:00'da mesaj atacak (24 saat formatı)
 TARGET_MINUTE = 0
@@ -134,7 +129,17 @@ async def on_message(message):
 
     # 1) Selam cevabı
     if message.content.lower() in ["sa", "selam", "selamlar"]:
-        await message.channel.send("Aleyküm selam! Nasılsın? <:selam:1384247246924677313>")
+        await message.channel.send(f"**Aleyküm selam {message.author.mention}!  Nasılsın? <:selam:1384247246924677313>**")
+
+        def check(m):
+            return m.author == message.author and m.channel == message.channel and m.content.lower() in ["iyiyim sen", "iyi sen", "iyidir sen", "hamdolsun sen"]
+
+        try:
+            reply = await bot.wait_for("message", timeout=20.0, check=check)
+            await message.channel.send(f"{message.author.mention} **Teşekkürler, iyi olmana sevindim sevindim! 😄**")
+        except asyncio.TimeoutError:
+            # Eğer kullanıcı 20 saniye içinde cevap vermezse bir şey yapma
+            pass
 
     
     # Kanal için limit varsa uygula
