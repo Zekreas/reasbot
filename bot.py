@@ -141,6 +141,13 @@ async def on_message(message):
             # Eğer kullanıcı 20 saniye içinde cevap vermezse bir şey yapma
             pass
 
+@bot.commant()
+@commands.has_permissions(manage_messages=True)
+async def mesajgonder(ctx, *, mesaj: str): #seçilen kanala belirlenen mesaj gönderir. Komutu kullanan kişinin mesajını siler.
+    await ctx.message.delete()  # Komutu kullanan kişinin mesajını sil
+    await ctx.send(mesaj)  # Belirtilen mesajı gönder
+
+
     
     # Kanal için limit varsa uygula
     if message.channel.id in channel_limits:
