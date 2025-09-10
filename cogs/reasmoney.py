@@ -11,5 +11,5 @@ class ReasMoney(commands.Cog):
         """Check how much money Reas has."""
         await ctx.send("Reas'ın **1,000,000,000,000,000** parası var.")
     
-def setup(bot):
+async def setup(bot):
     bot.add_cog(ReasMoney(bot))
