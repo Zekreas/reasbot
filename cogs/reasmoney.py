@@ -12,4 +12,4 @@ class ReasMoney(commands.Cog):
         await ctx.send("Reas'ın **1,000,000,000,000,000** parası var.")
     
 async def setup(bot):
-    bot.add_cog(ReasMoney(bot))
+    await bot.add_cog(ReasMoney(bot))
