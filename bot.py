@@ -22,9 +22,6 @@ intents.guilds = True  # Sunucuları izlemek için gerekli izin
 # Komutlar için prefix (ön ek) belirliyoruz
 bot = commands.Bot(command_prefix="r!", intents=intents)
 
-
-bot.load_extension("reasmoney")  # reasmoney.py dosyasını yüklüyoruz
-
 initial_extensions = []
 
 for filename in os.listdir("./cogs"):
