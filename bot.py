@@ -44,7 +44,17 @@ gununhanti_kanalid = 1405472367068708935
 girenkisisayisi = 0
 cikankisisayisi = 0
 
-
+# !reload komutu (sadece bot sahibi çalıştırabilir)
+@bot.command()
+@commands.is_owner()
+async def reload(ctx, cog: str):
+    """Belirtilen cog'u yeniden yükler"""
+    try:
+        bot.unload_extension(f"cogs.{cog}")
+        bot.load_extension(f"cogs.{cog}")
+        await ctx.send(f"✅ `{cog}` cog başarıyla yeniden yüklendi!")
+    except Exception as e:
+        await ctx.send(f"❌ `{cog}` cog yüklenirken hata oluştu:\n`{e}`")
 
 @bot.command()
 @commands.has_permissions(administrator=True)
