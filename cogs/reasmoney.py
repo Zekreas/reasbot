@@ -96,8 +96,8 @@ class ReasMoney(commands.Cog):
                 duration = (now - join_time).total_seconds()
                 minutes = int(duration // 60)  # Tam dakikaları hesapla
                 
-                if minutes > 0:
-                    coins = minutes * 2  # Her dakika 2 coin
+                if minutes >= 2:
+                    coins = minutes // 2
                     await self.add_coins(user_id, coins)
                 
                 del self.voice_users[user_id]
@@ -110,15 +110,15 @@ class ReasMoney(commands.Cog):
                 duration = (now - join_time).total_seconds()
                 minutes = int(duration // 60)
                 
-                if minutes > 0:
-                    coins = minutes * 2
+                if minutes >= 2:
+                    coins = minutes // 2
                     await self.add_coins(user_id, coins)
             
             # Yeni kanala katılma
             self.voice_users[user_id] = now
     
     # Ses kanalında olan kullanıcılara periyodik ödül
-    @tasks.loop(minutes=1)
+    @tasks.loop(minutes=2)
     async def voice_reward_task(self):
         """Her dakika ses kanalındaki kullanıcılara ödül verir"""
         if not self.voice_users:
@@ -136,7 +136,7 @@ class ReasMoney(commands.Cog):
         
         # Ödülleri dağıt
         for user_id in users_to_reward:
-            await self.add_coins(user_id, 2)
+            await self.add_coins(user_id, 1)
     
     @voice_reward_task.before_loop
     async def before_voice_task(self):
