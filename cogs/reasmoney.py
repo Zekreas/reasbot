@@ -198,36 +198,24 @@ class ReasMoney(commands.Cog):
         """Cog kaldırılırken temizlik"""
         self.voice_reward_task.cancel()
 
-    
     @commands.command(name="coinduzenle", aliases=["setcoins"])
-    @commands.is_owner()  # Sadece bot sahibi kullanabilir
-    async def set_coins(self, ctx, member: commands.MemberConverter, amount: int):
-        """
-        Bot sahibi istediği kullanıcıya coin ekleyebilir veya çıkarabilir.
-        amount pozitif ise coin ekler, negatif ise çıkarır.
-        Kullanım: !setcoins @kullanıcı 50
-        """
+    @commands.is_owner()
+    async def set_coins(self, ctx, member: discord.Member, amount: int):
         if amount == 0:
             await ctx.send("Coin miktarı 0 olamaz.")
             return
-
-        await self.reas_money.add_coins(member.id, amount)
+        await self.add_coins(member.id, amount)
         if amount > 0:
             await ctx.send(f"✅ {member.display_name} kullanıcısına **{amount}** coin eklendi.")
         else:
             await ctx.send(f"✅ {member.display_name} kullanıcısının coininden **{-amount}** coin çıkarıldı.")
 
     @commands.command(name="resetcoins", aliases=["coinsıfırla"])
-    @commands.is_owner()  # Sadece bot sahibi kullanabilir
-    async def reset_coins(self, ctx, member: commands.MemberConverter):
-        """
-        Bot sahibi istediği kullanıcının coin miktarını sıfırlayabilir.
-        Kullanım: !resetcoins @kullanıcı
-        """
+    @commands.is_owner()
+    async def reset_coins(self, ctx, member: discord.Member):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("UPDATE users SET reas_coin = 0 WHERE user_id = ?", (member.id,))
             await db.commit()
-        
         await ctx.send(f"✅ {member.display_name} kullanıcısının coin miktarı sıfırlandı.")
 
 
