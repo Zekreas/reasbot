@@ -58,6 +58,11 @@ class ReasMoney(commands.Cog):
         if message.author.bot:
             return
         
+        # Sadece belirli kanallarda puan kazanılsın
+        allowed_channels = [1382742472207368192, 1407256228869967943]  # Sohbet ve Animanga sohbet
+        if message.channel.id not in allowed_channels:
+            return
+        
         user_id = message.author.id
         now = datetime.now()
         
