@@ -22,6 +22,18 @@ intents.guilds = True  # Sunucuları izlemek için gerekli izin
 # Komutlar için prefix (ön ek) belirliyoruz
 bot = commands.Bot(command_prefix="r!", intents=intents)
 
+
+bot.load_extension("reasmoney")  # reasmoney.py dosyasını yüklüyoruz
+
+initial_extensions = []
+
+for filename in os.listdir("./cogs"):
+    if filename.endswith(".py"):
+        initial_extensions.append(f"cogs.{filename[:-3]}")
+
+async def load_extensions():
+    for ext in initial_extensions:
+        await bot.load_extension(ext)
     
 TARGET_HOUR = 12   # 09:00'da mesaj atacak (24 saat formatı)
 TARGET_MINUTE = 0
@@ -34,6 +46,8 @@ Gununhanti_TARGET_MINUTE = 0
 gununhanti_kanalid = 1405472367068708935
 girenkisisayisi = 0
 cikankisisayisi = 0
+
+
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -304,6 +318,7 @@ async def raporver(ctx):
 @bot.event
 async def on_ready():
     print(f"{bot.user} giriş yaptı ✅")
+    await load_extensions()
     rastgele_anime_gonder.start()
     gununhantigonder.start()
     print(f"Bot {len(bot.guilds)} sunucuda bulunuyor:")
