@@ -50,7 +50,10 @@ cikankisisayisi = 0
 async def reload(ctx, cog: str):
     """Belirtilen cog'u yeniden yükler"""
     try:
-        await bot.unload_extension(f"cogs.{cog}")
+        try:
+            await bot.unload_extension(f"cogs.{cog}")
+        except commands.ExtensionNotLoaded:
+            pass  # Yüklü değilse sorun yok
         await bot.load_extension(f"cogs.{cog}")
         await ctx.send(f"✅ `{cog}` cog başarıyla yeniden yüklendi!")
     except Exception as e:
