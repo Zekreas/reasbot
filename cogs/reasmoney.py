@@ -22,6 +22,8 @@ class ReasMoney(commands.Cog):
         
         # Ses ödülü task'ını başlat
         self.voice_reward_task.start()
+        self.voice_hour_task.start()
+        
     
     def _setup_database(self):
         """Database'i kurar"""
@@ -142,6 +144,25 @@ class ReasMoney(commands.Cog):
     async def before_voice_task(self):
         await self.bot.wait_until_ready()
     
+    
+    @tasks.loop(hours=1)
+    async def voice_hour_task(self):
+        """Her saat ses kanalındaki kullanıcılara +1 voicehour verir"""
+        if not self.voice_users:
+            return
+        
+        for user_id in self.voice_users.keys():
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute("""
+                    INSERT INTO users (user_id, voicehour) VALUES (?, 1)
+                    ON CONFLICT(user_id) DO UPDATE SET voicehour = voicehour + 1
+                """, (user_id,))
+                await db.commit()
+
+    @voice_hour_task.before_loop
+    async def before_voice_hour_task(self):
+        await self.bot.wait_until_ready()
+
     # Coin görüntüleme komutu
     @commands.command(name="coins", aliases=["coin", "bakiye"])
     async def show_coins(self, ctx, member: discord.Member = None):
