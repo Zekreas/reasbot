@@ -81,6 +81,68 @@ class xp(commands.Cog):
                 """, (user_id,))
                 await db.commit()
     
+    # Ses sıralaması komutu
+    @commands.command(name="voicetop", aliases=["sestop", "sesistatistikleri", "ses"])
+    async def voice_leaderboard(self, ctx, limit: int = 10):
+        """En çok ses kanalında duran kullanıcıları gösterir"""
+        if limit > 20:
+            limit = 20
+        
+        # Tüm kullanıcıları sıralı olarak al
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("""
+                SELECT user_id, voicehour FROM users 
+                WHERE voicehour > 0
+                ORDER BY voicehour DESC
+            """) as cursor:
+                all_rows = await cursor.fetchall()
+        
+        if not all_rows:
+            await ctx.send("Henüz hiç ses saati kazanan yok!")
+            return
+        
+        # İlk 10'u al
+        top_rows = all_rows[:limit]
+        
+        embed = discord.Embed(
+            title="🎤 Ses Kanalı Sıralaması",
+            color=discord.Color.purple()
+        )
+        
+        description = ""
+        for i, (user_id, voicehour) in enumerate(top_rows, 1):
+            user = self.bot.get_user(user_id)
+            name = user.display_name if user else f"Kullanıcı {user_id}"
+            
+            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+            description += f"{medal} {name}: **{voicehour}** saat\n"
+        
+        embed.description = description
+        
+        # Komutu kullanan kişinin sırasını bul
+        user_rank = None
+        user_hours = None
+        for i, (user_id, voicehour) in enumerate(all_rows, 1):
+            if user_id == ctx.author.id:
+                user_rank = i
+                user_hours = voicehour
+                break
+        
+        if user_rank:
+            embed.add_field(
+                name="📍 Senin Sıran",
+                value=f"**{user_rank}.** sıradasın - **{user_hours}** saat",
+                inline=False
+            )
+        else:
+            embed.add_field(
+                name="📍 Senin Sıran",
+                value="Henüz ses saatin yok!",
+                inline=False
+            )
+        
+        await ctx.send(embed=embed)
+    
     def cog_unload(self):
         """Cog kaldırılırken temizlik"""
         pass
