@@ -170,6 +170,7 @@ class ReasMoney(commands.Cog):
                             row = await cursor.fetchone()
                             coins_today = row[0] if row else 0
                         coins_to_add = min(coins, self.max_voice_daily - coins_today)
+                        print(f"[VOICE DEBUG] user_id={user_id} coins={coins} coins_today={coins_today} coins_to_add={coins_to_add}")
                         if coins_to_add > 0:
                             await self.add_coins(user_id, coins_to_add)
                             await db.execute("UPDATE users SET voice_daily_coins = voice_daily_coins + ? WHERE user_id = ?", (coins_to_add, user_id))
