@@ -54,6 +54,13 @@ class ReasMoney(commands.Cog):
                 row = await cursor.fetchone()
                 return row[0] if row else 0
     
+    @commands.command()
+    @commands.is_owner()
+    async def testcoins(self, ctx):
+        user_id = ctx.author.id
+        coins = await self.get_user_coins(user_id)
+        await ctx.send(f"Şu anki coin: {coins}\nBugünkü limit: {self.voice_daily.get(user_id)}")
+    
     # Mesaj yazma ödülü (spam korumalı)
     @commands.Cog.listener()
     async def on_message(self, message):
