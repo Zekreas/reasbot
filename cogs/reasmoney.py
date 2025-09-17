@@ -93,8 +93,25 @@ class ReasMoney(commands.Cog):
     async def testcoins(self, ctx):
         user_id = ctx.author.id
         coins = await self.get_user_coins(user_id)
-        await ctx.send(f"Şu anki coin: {coins}")
-    
+
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute(
+                "SELECT voice_daily_date, voice_daily_coins FROM users WHERE user_id = ?", 
+                (user_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+                daily_date, coins_today = row if row else (None, 0)
+
+        today = date.today().isoformat()
+        if daily_date != today:
+            coins_today = 0
+
+        remaining_voice_coins = max(self.max_voice_daily - coins_today, 0)
+
+        await ctx.send(
+            f"Şu anki coin: {coins}\n"
+            f"Bugünkü ses limiti: {remaining_voice_coins}/{self.max_voice_daily}"
+        )
     # Mesaj ödülü
     @commands.Cog.listener()
     async def on_message(self, message):
