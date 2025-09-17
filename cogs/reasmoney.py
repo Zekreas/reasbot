@@ -3,7 +3,7 @@ from discord.ext import commands, tasks
 import sqlite3
 import aiosqlite
 import asyncio
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 class ReasMoney(commands.Cog):
     def __init__(self, bot):
@@ -12,11 +12,12 @@ class ReasMoney(commands.Cog):
         
         # Spam koruması için cooldown sistemi
         self.message_cooldowns = {}  # {user_id: last_reward_time}
-        self.message_cooldown = 4  # 4 saniye
+        self.message_cooldown = 40  # 4 saniye
         
         # Ses kanalı takibi
         self.voice_users = {}  # {user_id: join_time}
-        
+        self.voice_daily = {}  # {user_id: (date, coins_today)}
+        self.max_voice_daily = 60  # Günlük maksimum coin
         # Database setup
         self._setup_database()
         
@@ -85,6 +86,15 @@ class ReasMoney(commands.Cog):
         
         user_id = member.id
         now = datetime.now()
+        today = date.today()
+        
+        # Günlük sıfırlama kontrolü
+        if user_id in self.voice_daily:
+            daily_date, coins_today = self.voice_daily[user_id]
+            if daily_date != today:
+                self.voice_daily[user_id] = (today, 0)
+        else:
+            self.voice_daily[user_id] = (today, 0)
         
         # Ses kanalına katıldı
         if before.channel is None and after.channel is not None:
@@ -95,17 +105,21 @@ class ReasMoney(commands.Cog):
             if user_id in self.voice_users:
                 join_time = self.voice_users[user_id]
                 duration = (now - join_time).total_seconds()
-                minutes = int(duration // 60)  # Tam dakikaları hesapla
+                minutes = int(duration // 60)
                 
                 if minutes >= 2:
                     coins = minutes // 2
-                    await self.add_coins(user_id, coins)
+                    # Günlük limiti kontrol et
+                    _, coins_today = self.voice_daily[user_id]
+                    coins_to_add = min(coins, self.max_voice_daily - coins_today)
+                    if coins_to_add > 0:
+                        await self.add_coins(user_id, coins_to_add)
+                        self.voice_daily[user_id] = (today, coins_today + coins_to_add)
                 
                 del self.voice_users[user_id]
         
-        # Kanal değiştirdi (aynı anda hem join hem leave)
+        # Kanal değiştirdi
         elif before.channel != after.channel and before.channel is not None and after.channel is not None:
-            # Önceki kanaldan ayrılma işlemi
             if user_id in self.voice_users:
                 join_time = self.voice_users[user_id]
                 duration = (now - join_time).total_seconds()
@@ -113,32 +127,43 @@ class ReasMoney(commands.Cog):
                 
                 if minutes >= 2:
                     coins = minutes // 2
-                    await self.add_coins(user_id, coins)
+                    _, coins_today = self.voice_daily[user_id]
+                    coins_to_add = min(coins, self.max_voice_daily - coins_today)
+                    if coins_to_add > 0:
+                        await self.add_coins(user_id, coins_to_add)
+                        self.voice_daily[user_id] = (today, coins_today + coins_to_add)
             
-            # Yeni kanala katılma
             self.voice_users[user_id] = now
-    
-    # Ses kanalında olan kullanıcılara periyodik ödül
+
+    # Ses ödül task
     @tasks.loop(minutes=2)
     async def voice_reward_task(self):
-        """Her dakika ses kanalındaki kullanıcılara ödül verir"""
         if not self.voice_users:
             return
         
         now = datetime.now()
-        users_to_reward = []
+        today = date.today()
         
         for user_id, join_time in self.voice_users.items():
-            # En az 1 dakika geçmişse
+            # Günlük sıfırlama kontrolü
+            if user_id in self.voice_daily:
+                daily_date, coins_today = self.voice_daily[user_id]
+                if daily_date != today:
+                    self.voice_daily[user_id] = (today, 0)
+            else:
+                self.voice_daily[user_id] = (today, 0)
+            
+            # 1 dakikadan fazla seste kalanlara ödül
             if (now - join_time).total_seconds() >= 60:
-                users_to_reward.append(user_id)
-                # Zamanlayıcıyı güncelle (bir sonraki dakika için)
+                _, coins_today = self.voice_daily[user_id]
+                coins_to_add = min(1, self.max_voice_daily - coins_today)
+                if coins_to_add > 0:
+                    await self.add_coins(user_id, coins_to_add)
+                    self.voice_daily[user_id] = (today, coins_today + coins_to_add)
+                
+                # Bir sonraki periyot için zamanı güncelle
                 self.voice_users[user_id] = now
-        
-        # Ödülleri dağıt
-        for user_id in users_to_reward:
-            await self.add_coins(user_id, 1)
-    
+
     @voice_reward_task.before_loop
     async def before_voice_task(self):
         await self.bot.wait_until_ready()
