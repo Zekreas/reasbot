@@ -10,23 +10,22 @@ class ReasMoney(commands.Cog):
         self.bot = bot
         self.db_path = "reas.db"
         
-        # Spam koruması için cooldown sistemi
+        # Spam koruması için cooldown
         self.message_cooldowns = {}  # {user_id: last_reward_time}
-        self.message_cooldown = 30  # 4 saniye
+        self.message_cooldown = 30  # saniye
         
-        # Ses kanalı takibi
+        # Ses takibi (DB’ye taşındı, burada sadece aktif oturumlar tutuluyor)
         self.voice_users = {}  # {user_id: join_time}
-        self.voice_daily = {}  # {user_id: (date, coins_today)}
-        self.max_voice_daily = 160  # Günlük maksimum coin
+        self.max_voice_daily = 160  # günlük maksimum ses coin
+        
         # Database setup
         self._setup_database()
         
-        # Ses ödülü task'ını başlat
+        # Ses ödülü task'ı
         self.voice_reward_task.start()
-        
     
     def _setup_database(self):
-        """Database'i kurar"""
+        """Database tablolarını kurar"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("""
@@ -64,10 +63,9 @@ class ReasMoney(commands.Cog):
                 INSERT OR IGNORE INTO users (user_id) VALUES (?)
             """, (user_id,))
             await db.commit()
-
     
     # Günlük ödül komutu
-    @commands.command(name="daily", aliases=["günlük"])
+    @commands.command(name="daily")
     async def daily(self, ctx):
         user_id = ctx.author.id
         today = date.today().isoformat()
@@ -89,49 +87,36 @@ class ReasMoney(commands.Cog):
             await db.commit()
         
         await ctx.send(f"✅ Günlük ödülünü aldın! {reward} coin eklendi 💰")
-
-
-    
     
     @commands.command()
     @commands.is_owner()
     async def testcoins(self, ctx):
         user_id = ctx.author.id
         coins = await self.get_user_coins(user_id)
-        daily_info = self.voice_daily.get(user_id)
-        
-        if daily_info is None:
-            daily_info_text = "Henüz günlük kayıt yok"
-        else:
-            daily_info_text = f"Tarih: {daily_info[0]}, Bugünkü coin: {daily_info[1]}"
-        
-        await ctx.send(f"Şu anki coin: {coins}\nBugünkü limit: {daily_info_text}")
-
-    # Mesaj yazma ödülü (spam korumalı)
+        await ctx.send(f"Şu anki coin: {coins}")
+    
+    # Mesaj ödülü
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author.bot:
             return
         
-        # Sadece belirli kanallarda puan kazanılsın
-        allowed_channels = [1382742472207368192, 1407256228869967943]  # Sohbet ve Animanga sohbet
+        allowed_channels = [1382742472207368192, 1407256228869967943]
         if message.channel.id not in allowed_channels:
             return
         
         user_id = message.author.id
         now = datetime.now()
         
-        # Cooldown kontrolü
         if user_id in self.message_cooldowns:
             last_reward = self.message_cooldowns[user_id]
             if (now - last_reward).total_seconds() < self.message_cooldown:
-                return  # Henüz çok erken
+                return
         
-        # Kullanıcıyı kaydet ve 1 coin ver
         await self.add_coins(user_id, 1)
         self.message_cooldowns[user_id] = now
     
-    # Ses kanalı join/leave takibi
+    # Ses kanalına giriş/çıkış
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if member.bot:
@@ -224,99 +209,49 @@ class ReasMoney(commands.Cog):
     async def before_voice_task(self):
         await self.bot.wait_until_ready()
     
-
-    @commands.command(name="deneme", aliases=["test"])
-    async def test_command(self, ctx):
-        """Test komutu"""
-        await ctx.send("Bot çalışıyor!")
-
-    # Coin görüntüleme komutu
+    # Coin görüntüleme
     @commands.command(name="coins", aliases=["coin", "bakiye"])
     async def show_coins(self, ctx, member: discord.Member = None):
-        """Kullanıcının coin miktarını gösterir"""
         if member is None:
             member = ctx.author
-        
         coins = await self.get_user_coins(member.id)
-        
         embed = discord.Embed(
             title="💰 Reas Coin Bakiyesi",
             description=f"{member.display_name}: **{coins:,}** coin",
             color=discord.Color.gold()
         )
         embed.set_thumbnail(url=member.display_avatar.url)
-        
         await ctx.send(embed=embed)
     
-    # Leaderboard komutu
+    # Leaderboard
     @commands.command(name="top", aliases=["leaderboard", "sıralama"])
     async def leaderboard(self, ctx, limit: int = 10):
-        """En zengin kullanıcıları gösterir"""
         if limit > 20:
             limit = 20
-        
         async with aiosqlite.connect(self.db_path) as db:
             async with db.execute("""
                 SELECT user_id, reas_coin FROM users 
                 ORDER BY reas_coin DESC LIMIT ?
             """, (limit,)) as cursor:
                 rows = await cursor.fetchall()
-        
         if not rows:
             await ctx.send("Henüz hiç coin kazanan yok!")
             return
-        
         embed = discord.Embed(
             title="🏆 Reas Coin Sıralaması",
             color=discord.Color.gold()
         )
-        
         description = ""
         for i, (user_id, coins) in enumerate(rows, 1):
             user = self.bot.get_user(user_id)
             name = user.display_name if user else f"Kullanıcı {user_id}"
-            
             medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
             description += f"{medal} {name}: **{coins:,}** coin\n"
-        
         embed.description = description
         await ctx.send(embed=embed)
     
     def cog_unload(self):
-        """Cog kaldırılırken temizlik"""
         self.voice_reward_task.cancel()
 
-    @commands.command(name="coinduzenle", aliases=["setcoins"])
-    @commands.is_owner()
-    async def set_coins(self, ctx, member: discord.Member, amount: int):
-        if amount == 0:
-            await ctx.send("Coin miktarı 0 olamaz.")
-            return
-        await self.add_coins(member.id, amount)
-        if amount > 0:
-            await ctx.send(f"✅ {member.display_name} kullanıcısına **{amount}** coin eklendi.")
-        else:
-            await ctx.send(f"✅ {member.display_name} kullanıcısının coininden **{-amount}** coin çıkarıldı.")
-
-    @commands.command(name="resetcoins", aliases=["coinsıfırla"])
-    @commands.is_owner()
-    async def reset_coins(self, ctx, member: discord.Member):
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute("UPDATE users SET reas_coin = 0 WHERE user_id = ?", (member.id,))
-            await db.commit()
-        await ctx.send(f"✅ {member.display_name} kullanıcısının coin miktarı sıfırlandı.")
-
-
-    @commands.command(name="modcoinkomutları", aliases=["modcoin"])
-    @commands.is_owner()  # Sadece bot sahibi kullanabilir
-    async def mod_coin_commands(self, ctx):
-        """Mod coin komutlarını gösterir"""
-        embed = discord.Embed(
-            title="🔧 Mod Coin Komutları",
-            color=discord.Color.blue()
-        )
-        embed.add_field(name="r!setcoins @kullanıcı miktar", value="Belirtilen kullanıcıya miktar kadar coin ekler veya çıkarır. (miktar negatif ise çıkarır)", inline=False)
-        embed.add_field(name="r!resetcoins @kullanıcı", value="Belirtilen kullanıcının coin miktarını sıfırlar.", inline=False)
-        await ctx.send(embed=embed)
 async def setup(bot):
     await bot.add_cog(ReasMoney(bot))
