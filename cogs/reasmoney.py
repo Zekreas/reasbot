@@ -67,7 +67,7 @@ class ReasMoney(commands.Cog):
 
     
     # Günlük ödül komutu
-    @commands.command(name="daily", attrs=["günlük"])
+    @commands.command(name="daily", aliases=["günlük"])
     async def daily(self, ctx):
         user_id = ctx.author.id
         today = date.today().isoformat()
