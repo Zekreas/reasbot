@@ -67,7 +67,7 @@ class ReasMoney(commands.Cog):
 
     
     # Günlük ödül komutu
-    @commands.command(name="daily" attrs=["günlük"])
+    @commands.command(name="daily", attrs=["günlük"])
     async def daily(self, ctx):
         user_id = ctx.author.id
         today = date.today().isoformat()
@@ -106,7 +106,7 @@ class ReasMoney(commands.Cog):
             daily_info_text = f"Tarih: {daily_info[0]}, Bugünkü coin: {daily_info[1]}"
         
         await ctx.send(f"Şu anki coin: {coins}\nBugünkü limit: {daily_info_text}")
-        
+
     # Mesaj yazma ödülü (spam korumalı)
     @commands.Cog.listener()
     async def on_message(self, message):
