@@ -12,12 +12,12 @@ class ReasMoney(commands.Cog):
         
         # Spam koruması için cooldown sistemi
         self.message_cooldowns = {}  # {user_id: last_reward_time}
-        self.message_cooldown = 40  # 4 saniye
+        self.message_cooldown = 30  # 4 saniye
         
         # Ses kanalı takibi
         self.voice_users = {}  # {user_id: join_time}
         self.voice_daily = {}  # {user_id: (date, coins_today)}
-        self.max_voice_daily = 60  # Günlük maksimum coin
+        self.max_voice_daily = 160  # Günlük maksimum coin
         # Database setup
         self._setup_database()
         
