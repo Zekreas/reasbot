@@ -59,8 +59,14 @@ class ReasMoney(commands.Cog):
     async def testcoins(self, ctx):
         user_id = ctx.author.id
         coins = await self.get_user_coins(user_id)
-        await ctx.send(f"Şu anki coin: {coins}\nBugünkü limit: {self.voice_daily.get(user_id)}")
-    
+        daily_info = self.voice_daily.get(user_id)
+        
+        if daily_info is None:
+            daily_info_text = "Henüz günlük kayıt yok"
+        else:
+            daily_info_text = f"Tarih: {daily_info[0]}, Bugünkü coin: {daily_info[1]}"
+        
+        await ctx.send(f"Şu anki coin: {coins}\nBugünkü limit: {daily_info_text}")
     # Mesaj yazma ödülü (spam korumalı)
     @commands.Cog.listener()
     async def on_message(self, message):
