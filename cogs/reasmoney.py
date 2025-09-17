@@ -32,7 +32,10 @@ class ReasMoney(commands.Cog):
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
-                reas_coin INTEGER DEFAULT 0
+                reas_coin INTEGER DEFAULT 0,
+                last_daily TEXT,
+                voice_daily_date TEXT,
+                voice_daily_coins INTEGER DEFAULT 0
             )
         """)
         conn.commit()
@@ -54,6 +57,42 @@ class ReasMoney(commands.Cog):
                 row = await cursor.fetchone()
                 return row[0] if row else 0
     
+    async def get_or_create_user(self, user_id):
+        """Kullanıcı kaydını getirir, yoksa oluşturur"""
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("""
+                INSERT OR IGNORE INTO users (user_id) VALUES (?)
+            """, (user_id,))
+            await db.commit()
+
+    
+    # Günlük ödül komutu
+    @commands.command(name="daily" attrs=["günlük"])
+    async def daily(self, ctx):
+        user_id = ctx.author.id
+        today = date.today().isoformat()
+        
+        await self.get_or_create_user(user_id)
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("SELECT last_daily FROM users WHERE user_id = ?", (user_id,)) as cursor:
+                row = await cursor.fetchone()
+                last_daily = row[0] if row else None
+            
+            if last_daily == today:
+                await ctx.send("❌ Bugün günlük ödülünü zaten aldın. Yarın tekrar dene!")
+                return
+            
+            reward = 50  # günlük ödül miktarı (istersen değiştir)
+            await self.add_coins(user_id, reward)
+            await db.execute("UPDATE users SET last_daily = ? WHERE user_id = ?", (today, user_id))
+            await db.commit()
+        
+        await ctx.send(f"✅ Günlük ödülünü aldın! {reward} coin eklendi 💰")
+
+
+    
+    
     @commands.command()
     @commands.is_owner()
     async def testcoins(self, ctx):
@@ -67,6 +106,7 @@ class ReasMoney(commands.Cog):
             daily_info_text = f"Tarih: {daily_info[0]}, Bugünkü coin: {daily_info[1]}"
         
         await ctx.send(f"Şu anki coin: {coins}\nBugünkü limit: {daily_info_text}")
+        
     # Mesaj yazma ödülü (spam korumalı)
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -99,21 +139,22 @@ class ReasMoney(commands.Cog):
         
         user_id = member.id
         now = datetime.now()
-        today = date.today()
+        today = date.today().isoformat()
         
-        # Günlük sıfırlama kontrolü
-        if user_id in self.voice_daily:
-            daily_date, coins_today = self.voice_daily[user_id]
+        await self.get_or_create_user(user_id)
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("SELECT voice_daily_date, voice_daily_coins FROM users WHERE user_id = ?", (user_id,)) as cursor:
+                row = await cursor.fetchone()
+                daily_date, coins_today = row if row else (None, 0)
+            
             if daily_date != today:
-                self.voice_daily[user_id] = (today, 0)
-        else:
-            self.voice_daily[user_id] = (today, 0)
+                coins_today = 0
+                await db.execute("UPDATE users SET voice_daily_date = ?, voice_daily_coins = 0 WHERE user_id = ?", (today, user_id))
+                await db.commit()
         
-        # Ses kanalına katıldı
         if before.channel is None and after.channel is not None:
             self.voice_users[user_id] = now
-        
-        # Ses kanalından ayrıldı
         elif before.channel is not None and after.channel is None:
             if user_id in self.voice_users:
                 join_time = self.voice_users[user_id]
@@ -122,16 +163,16 @@ class ReasMoney(commands.Cog):
                 
                 if minutes >= 2:
                     coins = minutes // 2
-                    # Günlük limiti kontrol et
-                    _, coins_today = self.voice_daily[user_id]
-                    coins_to_add = min(coins, self.max_voice_daily - coins_today)
-                    if coins_to_add > 0:
-                        await self.add_coins(user_id, coins_to_add)
-                        self.voice_daily[user_id] = (today, coins_today + coins_to_add)
-                
+                    async with aiosqlite.connect(self.db_path) as db:
+                        async with db.execute("SELECT voice_daily_coins FROM users WHERE user_id = ?", (user_id,)) as cursor:
+                            row = await cursor.fetchone()
+                            coins_today = row[0] if row else 0
+                        coins_to_add = min(coins, self.max_voice_daily - coins_today)
+                        if coins_to_add > 0:
+                            await self.add_coins(user_id, coins_to_add)
+                            await db.execute("UPDATE users SET voice_daily_coins = voice_daily_coins + ? WHERE user_id = ?", (coins_to_add, user_id))
+                            await db.commit()
                 del self.voice_users[user_id]
-        
-        # Kanal değiştirdi
         elif before.channel != after.channel and before.channel is not None and after.channel is not None:
             if user_id in self.voice_users:
                 join_time = self.voice_users[user_id]
@@ -140,43 +181,45 @@ class ReasMoney(commands.Cog):
                 
                 if minutes >= 2:
                     coins = minutes // 2
-                    _, coins_today = self.voice_daily[user_id]
-                    coins_to_add = min(coins, self.max_voice_daily - coins_today)
-                    if coins_to_add > 0:
-                        await self.add_coins(user_id, coins_to_add)
-                        self.voice_daily[user_id] = (today, coins_today + coins_to_add)
-            
+                    async with aiosqlite.connect(self.db_path) as db:
+                        async with db.execute("SELECT voice_daily_coins FROM users WHERE user_id = ?", (user_id,)) as cursor:
+                            row = await cursor.fetchone()
+                            coins_today = row[0] if row else 0
+                        coins_to_add = min(coins, self.max_voice_daily - coins_today)
+                        if coins_to_add > 0:
+                            await self.add_coins(user_id, coins_to_add)
+                            await db.execute("UPDATE users SET voice_daily_coins = voice_daily_coins + ? WHERE user_id = ?", (coins_to_add, user_id))
+                            await db.commit()
             self.voice_users[user_id] = now
-
-    # Ses ödül task
+    
     @tasks.loop(minutes=2)
     async def voice_reward_task(self):
         if not self.voice_users:
             return
         
         now = datetime.now()
-        today = date.today()
+        today = date.today().isoformat()
         
-        for user_id, join_time in self.voice_users.items():
-            # Günlük sıfırlama kontrolü
-            if user_id in self.voice_daily:
-                daily_date, coins_today = self.voice_daily[user_id]
-                if daily_date != today:
-                    self.voice_daily[user_id] = (today, 0)
-            else:
-                self.voice_daily[user_id] = (today, 0)
-            
-            # 1 dakikadan fazla seste kalanlara ödül
+        for user_id, join_time in list(self.voice_users.items()):
             if (now - join_time).total_seconds() >= 60:
-                _, coins_today = self.voice_daily[user_id]
-                coins_to_add = min(1, self.max_voice_daily - coins_today)
-                if coins_to_add > 0:
-                    await self.add_coins(user_id, coins_to_add)
-                    self.voice_daily[user_id] = (today, coins_today + coins_to_add)
-                
-                # Bir sonraki periyot için zamanı güncelle
+                await self.get_or_create_user(user_id)
+                async with aiosqlite.connect(self.db_path) as db:
+                    async with db.execute("SELECT voice_daily_date, voice_daily_coins FROM users WHERE user_id = ?", (user_id,)) as cursor:
+                        row = await cursor.fetchone()
+                        daily_date, coins_today = row if row else (None, 0)
+                    
+                    if daily_date != today:
+                        coins_today = 0
+                        await db.execute("UPDATE users SET voice_daily_date = ?, voice_daily_coins = 0 WHERE user_id = ?", (today, user_id))
+                        await db.commit()
+                    
+                    coins_to_add = min(1, self.max_voice_daily - coins_today)
+                    if coins_to_add > 0:
+                        await self.add_coins(user_id, coins_to_add)
+                        await db.execute("UPDATE users SET voice_daily_coins = voice_daily_coins + ? WHERE user_id = ?", (coins_to_add, user_id))
+                        await db.commit()
                 self.voice_users[user_id] = now
-
+    
     @voice_reward_task.before_loop
     async def before_voice_task(self):
         await self.bot.wait_until_ready()
