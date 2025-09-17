@@ -169,6 +169,11 @@ class ReasMoney(commands.Cog):
         await self.bot.wait_until_ready()
     
 
+    @commands.command(name="deneme", aliases=["test"])
+    async def test_command(self, ctx):
+        """Test komutu"""
+        await ctx.send("Bot çalışıyor!")
+
     # Coin görüntüleme komutu
     @commands.command(name="coins", aliases=["coin", "bakiye"])
     async def show_coins(self, ctx, member: discord.Member = None):
