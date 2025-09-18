@@ -12,13 +12,22 @@ class Market(commands.Cog):
             "renkler": {
                 "emoji": "🎨",
                 "items": {
-                    "mavi": {
+                    "mavi renk": {
                         "name": "Mavi Rol",
                         "price": 100,
                         "role_id": 1417903608225333469,
-                        "description": "Güzel mavi renkli rol"
-                    }
+                    },
                     # Buraya daha fazla renk ekleyebilirsiniz
+                    "yeşil renk": {
+                        "name": "Yeşil Rol",
+                        "price": 100,
+                        "role_id": 1418320278827827322,
+                    },
+                    "pembe renk": {
+                        "name": "Pembe Rol",
+                        "price": 100,
+                        "role_id": 1405194610078388224,
+                    }
                 }
             }
             # Buraya yeni kategoriler ekleyebilirsiniz
@@ -70,11 +79,11 @@ class Market(commands.Cog):
             for cat_name, cat_data in self.market_items.items():
                 embed.add_field(
                     name=f"{cat_data['emoji']} {cat_name.title()}",
-                    value=f"`!market {cat_name}` ile görüntüle",
+                    value=f"`r!market {cat_name}` ile görüntüle",
                     inline=True
                 )
             
-            embed.set_footer(text="Kullanım: !market <kategori>")
+            embed.set_footer(text="Kullanım: r!market <kategori>")
             
         else:
             # Kategori sayfası
@@ -91,13 +100,36 @@ class Market(commands.Cog):
             for item_key, item_data in cat_data['items'].items():
                 embed.add_field(
                     name=f"{item_data['name']}",
-                    value=f"💰 Fiyat: {item_data['price']} Reas Coin\n📝 {item_data['description']}\n`!satinal {item_key}`",
+                    value=f"💰 Fiyat: {item_data['price']} Reas Coin\n📝 {item_data['description']}\n`r!satinal {item_key}`",
                     inline=False
                 )
             
-            embed.set_footer(text="Kullanım: !satinal <ürün_adı>")
+            embed.set_footer(text="Kullanım: r!satinal <ürün_adı>")
         
         return embed
+
+    def get_color_roles(self):
+        """Renk rollerinin ID'lerini döndür"""
+        color_roles = []
+        if "renkler" in self.market_items:
+            for item_data in self.market_items["renkler"]["items"].values():
+                if "role_id" in item_data:
+                    color_roles.append(item_data["role_id"])
+        return color_roles
+
+    async def remove_color_roles(self, member):
+        """Kullanıcının sahip olduğu tüm renk rollerini kaldır"""
+        color_role_ids = self.get_color_roles()
+        roles_to_remove = []
+        
+        for role in member.roles:
+            if role.id in color_role_ids:
+                roles_to_remove.append(role)
+        
+        if roles_to_remove:
+            await member.remove_roles(*roles_to_remove, reason="Yeni renk rolü için eski renk kaldırıldı")
+            return [role.name for role in roles_to_remove]
+        return []
 
     @commands.command(name='market', aliases=['m'])
     async def market(self, ctx, kategori=None):
@@ -114,7 +146,7 @@ class Market(commands.Cog):
     async def buy_item(self, ctx, item_name=None):
         """Ürün satın alma"""
         if item_name is None:
-            await ctx.send("❌ Satın almak istediğiniz ürünü belirtiniz! Örnek: `!satinal mavi`")
+            await ctx.send("❌ Satın almak istediğiniz ürünü belirtiniz! Örnek: `r!satinal mavi`")
             return
 
         # Ürünü bul
@@ -128,7 +160,7 @@ class Market(commands.Cog):
                 break
         
         if found_item is None:
-            await ctx.send("❌ Böyle bir ürün bulunamadı! `!market` ile mevcut ürünleri görebilirsiniz.")
+            await ctx.send("❌ Böyle bir ürün bulunamadı! `r!market` ile mevcut ürünleri görebilirsiniz.")
             return
 
         user_id = ctx.author.id
@@ -145,6 +177,7 @@ class Market(commands.Cog):
             return
 
         # Rol kontrolü (sadece rol ürünleri için)
+        removed_roles = []
         if 'role_id' in found_item:
             role = ctx.guild.get_role(found_item['role_id'])
             if role is None:
@@ -154,6 +187,10 @@ class Market(commands.Cog):
             if role in ctx.author.roles:
                 await ctx.send("❌ Bu role zaten sahipsiniz!")
                 return
+            
+            # Eğer renk kategorisindeyse, mevcut renk rollerini kaldır
+            if found_category == "renkler":
+                removed_roles = await self.remove_color_roles(ctx.author)
 
         # Satın alma onayı
         embed = discord.Embed(
@@ -164,6 +201,14 @@ class Market(commands.Cog):
         embed.add_field(name="💰 Fiyat", value=f"{found_item['price']} Reas Coin", inline=True)
         embed.add_field(name="💳 Mevcut Bakiye", value=f"{user_coins} Reas Coin", inline=True)
         embed.add_field(name="💳 Kalan Bakiye", value=f"{user_coins - found_item['price']} Reas Coin", inline=True)
+        
+        if removed_roles and found_category == "renkler":
+            embed.add_field(
+                name="⚠️ Uyarı", 
+                value=f"Mevcut renk rolünüz ({', '.join(removed_roles)}) kaldırılacak!", 
+                inline=False
+            )
+        
         embed.set_footer(text="✅ ile onaylayın, ❌ ile iptal edin (30 saniye)")
 
         message = await ctx.send(embed=embed)
@@ -207,6 +252,10 @@ class Market(commands.Cog):
                 success = True
                 if 'role_id' in found_item:
                     try:
+                        # Renk kategorisindeyse önce eski renk rollerini kaldır
+                        if found_category == "renkler":
+                            await self.remove_color_roles(ctx.author)
+                        
                         role = ctx.guild.get_role(found_item['role_id'])
                         await ctx.author.add_roles(role, reason="Market satın alma")
                     except discord.Forbidden:
