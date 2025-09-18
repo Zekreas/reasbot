@@ -6,22 +6,31 @@ import asyncio
 class Market(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.db_path = "reas.db"
         
-        # Market ürünleri - şimdilik sadece renkler
-        self.color_roles = {
-            "mavi": {
-                "name": "🔵 Mavi",
-                "price": 100,
-                "role_id": 1417903608225333469,
-                "emoji": "🔵"
+        # Market kategorileri ve ürünleri
+        self.market_items = {
+            "renkler": {
+                "emoji": "🎨",
+                "items": {
+                    "mavi": {
+                        "name": "Mavi Rol",
+                        "price": 100,
+                        "role_id": 1417903608225333469,
+                        "description": "Güzel mavi renkli rol"
+                    }
+                    # Buraya daha fazla renk ekleyebilirsiniz
+                }
             }
-            # Daha fazla renk buraya eklenecek
+            # Buraya yeni kategoriler ekleyebilirsiniz
         }
-    
+
+    def get_db_connection(self):
+        """Veritabanı bağlantısı"""
+        return sqlite3.connect('reas.db')
+
     def get_user_coins(self, user_id):
-        """Kullanıcının coin miktarını al"""
-        conn = sqlite3.connect(self.db_path)
+        """Kullanıcının coin miktarını getir"""
+        conn = self.get_db_connection()
         cursor = conn.cursor()
         
         cursor.execute("SELECT reas_coin FROM users WHERE user_id = ?", (user_id,))
@@ -29,176 +38,222 @@ class Market(commands.Cog):
         conn.close()
         
         return result[0] if result else 0
-    
+
     def update_user_coins(self, user_id, new_amount):
         """Kullanıcının coin miktarını güncelle"""
-        conn = sqlite3.connect(self.db_path)
+        conn = self.get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("""INSERT INTO users (user_id, reas_coin, xp, voicehour) 
-                         VALUES (?, ?, 0, 0) 
-                         ON CONFLICT(user_id) DO UPDATE SET reas_coin = ?""", 
-                      (user_id, new_amount, new_amount))
+        cursor.execute("""
+            INSERT OR REPLACE INTO users (user_id, reas_coin, xp, voicehour, last_daily, voice_daily_date, voice_daily_coins)
+            VALUES (?, ?, 
+                    COALESCE((SELECT xp FROM users WHERE user_id = ?), 0),
+                    COALESCE((SELECT voicehour FROM users WHERE user_id = ?), 0),
+                    COALESCE((SELECT last_daily FROM users WHERE user_id = ?), '0'),
+                    COALESCE((SELECT voice_daily_date FROM users WHERE user_id = ?), '0'),
+                    COALESCE((SELECT voice_daily_coins FROM users WHERE user_id = ?), 0))
+        """, (user_id, new_amount, user_id, user_id, user_id, user_id, user_id))
+        
         conn.commit()
         conn.close()
-    
-    @commands.slash_command(name="market", description="Marketi görüntüle")
-    async def market(self, ctx):
-        embed = discord.Embed(
-            title="🛒 Reas Market",
-            description="Reas Coin karşılığında ürün satın alabilirsin!",
-            color=discord.Color.blue()
-        )
-        
-        user_coins = self.get_user_coins(ctx.author.id)
-        embed.add_field(
-            name="💰 Bakiyen", 
-            value=f"{user_coins} Reas Coin", 
-            inline=False
-        )
-        
-        # Renk kategorisi
-        color_text = ""
-        for key, item in self.color_roles.items():
-            color_text += f"{item['emoji']} **{item['name']}** - {item['price']} Coin\n"
-        
-        embed.add_field(
-            name="🎨 Renkli Roller", 
-            value=color_text, 
-            inline=False
-        )
-        
-        embed.add_field(
-            name="📝 Nasıl Satın Alırım?", 
-            value="`/satinal <kategori> <ürün>` komutunu kullan\nÖrnek: `/satinal renk mavi`", 
-            inline=False
-        )
-        
-        embed.set_footer(text="Daha fazla ürün yakında gelecek!")
-        await ctx.respond(embed=embed)
-    
-    @commands.slash_command(name="satinal", description="Market'ten ürün satın al")
-    async def buy_item(self, ctx, kategori: str, urun: str):
-        user_coins = self.get_user_coins(ctx.author.id)
-        
-        if kategori.lower() in ["renk", "renkler", "color"]:
-            if urun.lower() in self.color_roles:
-                item = self.color_roles[urun.lower()]
+
+    def create_market_embed(self, category=None):
+        """Market embed'i oluştur"""
+        if category is None:
+            # Ana market sayfası
+            embed = discord.Embed(
+                title="🛒 Reas Market",
+                description="Reas coin'lerinizi harcamak için kategorileri görüntüleyin!",
+                color=discord.Color.gold()
+            )
+            
+            for cat_name, cat_data in self.market_items.items():
+                embed.add_field(
+                    name=f"{cat_data['emoji']} {cat_name.title()}",
+                    value=f"`!market {cat_name}` ile görüntüle",
+                    inline=True
+                )
+            
+            embed.set_footer(text="Kullanım: !market <kategori>")
+            
+        else:
+            # Kategori sayfası
+            if category not in self.market_items:
+                return None
                 
-                # Yeterli coin kontrolü
-                if user_coins < item["price"]:
+            cat_data = self.market_items[category]
+            embed = discord.Embed(
+                title=f"{cat_data['emoji']} {category.title()} Market",
+                description="Aşağıdaki ürünlerden satın alabilirsiniz:",
+                color=discord.Color.blue()
+            )
+            
+            for item_key, item_data in cat_data['items'].items():
+                embed.add_field(
+                    name=f"{item_data['name']}",
+                    value=f"💰 Fiyat: {item_data['price']} Reas Coin\n📝 {item_data['description']}\n`!satinal {item_key}`",
+                    inline=False
+                )
+            
+            embed.set_footer(text="Kullanım: !satinal <ürün_adı>")
+        
+        return embed
+
+    @commands.command(name='market', aliases=['m'])
+    async def market(self, ctx, kategori=None):
+        """Market komutunu göster"""
+        embed = self.create_market_embed(kategori)
+        
+        if embed is None:
+            await ctx.send("❌ Böyle bir kategori bulunamadı!")
+            return
+            
+        await ctx.send(embed=embed)
+
+    @commands.command(name='satinal', aliases=['buy', 'al'])
+    async def buy_item(self, ctx, item_name=None):
+        """Ürün satın alma"""
+        if item_name is None:
+            await ctx.send("❌ Satın almak istediğiniz ürünü belirtiniz! Örnek: `!satinal mavi`")
+            return
+
+        # Ürünü bul
+        found_item = None
+        found_category = None
+        
+        for category, cat_data in self.market_items.items():
+            if item_name.lower() in cat_data['items']:
+                found_item = cat_data['items'][item_name.lower()]
+                found_category = category
+                break
+        
+        if found_item is None:
+            await ctx.send("❌ Böyle bir ürün bulunamadı! `!market` ile mevcut ürünleri görebilirsiniz.")
+            return
+
+        user_id = ctx.author.id
+        user_coins = self.get_user_coins(user_id)
+        
+        # Coin kontrolü
+        if user_coins < found_item['price']:
+            embed = discord.Embed(
+                title="❌ Yetersiz Bakiye",
+                description=f"Bu ürün için **{found_item['price']} Reas Coin** gerekiyor.\nSizin bakiyeniz: **{user_coins} Reas Coin**",
+                color=discord.Color.red()
+            )
+            await ctx.send(embed=embed)
+            return
+
+        # Rol kontrolü (sadece rol ürünleri için)
+        if 'role_id' in found_item:
+            role = ctx.guild.get_role(found_item['role_id'])
+            if role is None:
+                await ctx.send("❌ Bu rol sunucuda bulunamadı!")
+                return
+            
+            if role in ctx.author.roles:
+                await ctx.send("❌ Bu role zaten sahipsiniz!")
+                return
+
+        # Satın alma onayı
+        embed = discord.Embed(
+            title="🛒 Satın Alma Onayı",
+            description=f"**{found_item['name']}** satın almak istediğinizden emin misiniz?",
+            color=discord.Color.orange()
+        )
+        embed.add_field(name="💰 Fiyat", value=f"{found_item['price']} Reas Coin", inline=True)
+        embed.add_field(name="💳 Mevcut Bakiye", value=f"{user_coins} Reas Coin", inline=True)
+        embed.add_field(name="💳 Kalan Bakiye", value=f"{user_coins - found_item['price']} Reas Coin", inline=True)
+        embed.set_footer(text="✅ ile onaylayın, ❌ ile iptal edin (30 saniye)")
+
+        message = await ctx.send(embed=embed)
+        await message.add_reaction('✅')
+        await message.add_reaction('❌')
+
+        def check(reaction, user):
+            return (user == ctx.author and 
+                   str(reaction.emoji) in ['✅', '❌'] and 
+                   reaction.message.id == message.id)
+
+        try:
+            reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=check)
+            
+            if str(reaction.emoji) == '❌':
+                embed = discord.Embed(
+                    title="❌ İptal Edildi",
+                    description="Satın alma işlemi iptal edildi.",
+                    color=discord.Color.red()
+                )
+                await message.edit(embed=embed)
+                return
+
+            elif str(reaction.emoji) == '✅':
+                # Son kontrol (eşzamanlılık için)
+                current_coins = self.get_user_coins(user_id)
+                if current_coins < found_item['price']:
                     embed = discord.Embed(
                         title="❌ Yetersiz Bakiye",
-                        description=f"Bu ürün için **{item['price']} Reas Coin** gerekli.\nSenin bakiyen: **{user_coins} Reas Coin**",
+                        description="Satın alma sırasında bakiyeniz değişti!",
                         color=discord.Color.red()
                     )
-                    await ctx.respond(embed=embed)
+                    await message.edit(embed=embed)
                     return
-                
-                # Rolü zaten var mı kontrolü
-                role = discord.utils.get(ctx.guild.roles, id=item["role_id"])
-                if role in ctx.author.roles:
-                    embed = discord.Embed(
-                        title="⚠️ Zaten Sahipsin",
-                        description=f"**{item['name']}** rolüne zaten sahipsin!",
-                        color=discord.Color.orange()
-                    )
-                    await ctx.respond(embed=embed)
-                    return
-                
-                # Satın alma onayı
-                embed = discord.Embed(
-                    title="🛒 Satın Alma Onayı",
-                    description=f"**{item['name']}** rolünü **{item['price']} Reas Coin** karşılığında satın almak istediğinden emin misin?",
-                    color=discord.Color.yellow()
-                )
-                embed.add_field(name="Mevcut Bakiyen", value=f"{user_coins} Reas Coin", inline=True)
-                embed.add_field(name="Kalan Bakiyen", value=f"{user_coins - item['price']} Reas Coin", inline=True)
-                
-                view = BuyConfirmView(self, ctx.author.id, item, user_coins)
-                await ctx.respond(embed=embed, view=view)
-                
-            else:
-                embed = discord.Embed(
-                    title="❌ Ürün Bulunamadı",
-                    description=f"**{urun}** adında bir renk bulunamadı.\nMevcut renkler: `mavi`",
-                    color=discord.Color.red()
-                )
-                await ctx.respond(embed=embed)
-        else:
-            embed = discord.Embed(
-                title="❌ Kategori Bulunamadı",
-                description=f"**{kategori}** adında bir kategori bulunamadı.\nMevcut kategoriler: `renk`",
-                color=discord.Color.red()
-            )
-            await ctx.respond(embed=embed)
 
-class BuyConfirmView(discord.ui.View):
-    def __init__(self, market_cog, user_id, item, user_coins):
-        super().__init__(timeout=30)
-        self.market_cog = market_cog
-        self.user_id = user_id
-        self.item = item
-        self.user_coins = user_coins
-    
-    @discord.ui.button(label="✅ Satın Al", style=discord.ButtonStyle.success)
-    async def confirm_buy(self, button: discord.ui.Button, interaction: discord.Interaction):
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message("❌ Bu buton sadece komutu kullanan kişi için!", ephemeral=True)
-            return
-        
-        # Rolü ver
-        role = discord.utils.get(interaction.guild.roles, id=self.item["role_id"])
-        if role:
-            try:
-                await interaction.user.add_roles(role)
-                
-                # Coini düş
-                new_balance = self.user_coins - self.item["price"]
-                self.market_cog.update_user_coins(self.user_id, new_balance)
-                
-                embed = discord.Embed(
-                    title="✅ Satın Alma Başarılı!",
-                    description=f"**{self.item['name']}** rolü başarıyla satın alındı!",
-                    color=discord.Color.green()
-                )
-                embed.add_field(name="Harcanan", value=f"{self.item['price']} Reas Coin", inline=True)
-                embed.add_field(name="Kalan Bakiyen", value=f"{new_balance} Reas Coin", inline=True)
-                
-                await interaction.response.edit_message(embed=embed, view=None)
-                
-            except discord.Forbidden:
-                embed = discord.Embed(
-                    title="❌ Yetki Hatası",
-                    description="Rolü verirken bir hata oluştu. Botun yeterli yetkisi olmayabilir.",
-                    color=discord.Color.red()
-                )
-                await interaction.response.edit_message(embed=embed, view=None)
-        else:
+                # Coin'leri düş
+                new_balance = current_coins - found_item['price']
+                self.update_user_coins(user_id, new_balance)
+
+                # Rol ver (eğer rol ürünüyse)
+                success = True
+                if 'role_id' in found_item:
+                    try:
+                        role = ctx.guild.get_role(found_item['role_id'])
+                        await ctx.author.add_roles(role, reason="Market satın alma")
+                    except discord.Forbidden:
+                        success = False
+                        # Coin'leri geri ver
+                        self.update_user_coins(user_id, current_coins)
+                        embed = discord.Embed(
+                            title="❌ Yetki Hatası",
+                            description="Bu rolü verme yetkim yok! Coin'leriniz iade edildi.",
+                            color=discord.Color.red()
+                        )
+                        await message.edit(embed=embed)
+                        return
+
+                if success:
+                    embed = discord.Embed(
+                        title="✅ Satın Alma Başarılı!",
+                        description=f"**{found_item['name']}** başarıyla satın alındı!",
+                        color=discord.Color.green()
+                    )
+                    embed.add_field(name="💰 Ödenen", value=f"{found_item['price']} Reas Coin", inline=True)
+                    embed.add_field(name="💳 Kalan Bakiye", value=f"{new_balance} Reas Coin", inline=True)
+                    await message.edit(embed=embed)
+
+        except asyncio.TimeoutError:
             embed = discord.Embed(
-                title="❌ Rol Bulunamadı",
-                description="Rol sunucuda bulunamadı. Lütfen yönetici ile iletişime geçin.",
-                color=discord.Color.red()
+                title="⏰ Zaman Aşımı",
+                description="30 saniye içinde yanıt verilmedi, işlem iptal edildi.",
+                color=discord.Color.orange()
             )
-            await interaction.response.edit_message(embed=embed, view=None)
-    
-    @discord.ui.button(label="❌ İptal", style=discord.ButtonStyle.danger)
-    async def cancel_buy(self, button: discord.ui.Button, interaction: discord.Interaction):
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message("❌ Bu buton sadece komutu kullanan kişi için!", ephemeral=True)
-            return
+            await message.edit(embed=embed)
+
+    @commands.command(name='bakiye', aliases=['bal', 'balance', 'coin'])
+    async def balance(self, ctx, user: discord.Member = None):
+        """Coin bakiyesini göster"""
+        if user is None:
+            user = ctx.author
+            
+        user_coins = self.get_user_coins(user.id)
         
         embed = discord.Embed(
-            title="❌ Satın Alma İptal Edildi",
-            description="Satın alma işlemi iptal edildi.",
-            color=discord.Color.red()
+            title=f"💰 {user.display_name} - Bakiye",
+            description=f"**{user_coins} Reas Coin**",
+            color=discord.Color.gold()
         )
-        await interaction.response.edit_message(embed=embed, view=None)
-    
-    async def on_timeout(self):
-        # Zaman aşımında tüm butonları devre dışı bırak
-        for item in self.children:
-            item.disabled = True
+        embed.set_thumbnail(url=user.display_avatar.url)
+        await ctx.send(embed=embed)
 
-def setup(bot):
-    bot.add_cog(Market(bot))
+async def setup(bot):
+    await bot.add_cog(Market(bot))
