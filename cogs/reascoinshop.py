@@ -35,25 +35,6 @@ class Market(commands.Cog):
                         "item_type": "color_role"
                     }
                 }
-            },
-            "özel_roller": {
-                "emoji": "⭐",
-                "items": {
-                    "vip": {
-                        "name": "VIP Üye",
-                        "price": 500,
-                        "role_id": 1234567890123456789,  # Kendi VIP role ID'nizi yazın
-                        "description": "Özel VIP üye rolü - direkt verilir",
-                        "item_type": "permanent_role"
-                    },
-                    "destekçi": {
-                        "name": "Destekçi",
-                        "price": 300,
-                        "role_id": 1234567890123456790,  # Kendi Destekçi role ID'nizi yazın
-                        "description": "Sunucu destekçisi rolü - direkt verilir",
-                        "item_type": "permanent_role"
-                    }
-                }
             }
         }
 
