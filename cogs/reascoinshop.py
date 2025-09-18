@@ -33,6 +33,7 @@ class Market(commands.Cog):
             # Buraya yeni kategoriler ekleyebilirsiniz
         }
 
+
     def get_db_connection(self):
         """Veritabanı bağlantısı"""
         return sqlite3.connect('reas.db')
