@@ -228,19 +228,6 @@ class ReasMoney(commands.Cog):
     async def before_voice_task(self):
         await self.bot.wait_until_ready()
     
-    # Coin görüntüleme
-    @commands.command(name="coins", aliases=["coin", "bakiye"])
-    async def show_coins(self, ctx, member: discord.Member = None):
-        if member is None:
-            member = ctx.author
-        coins = await self.get_user_coins(member.id)
-        embed = discord.Embed(
-            title="💰 Reas Coin Bakiyesi",
-            description=f"{member.display_name}: **{coins:,}** coin",
-            color=discord.Color.gold()
-        )
-        embed.set_thumbnail(url=member.display_avatar.url)
-        await ctx.send(embed=embed)
     
     # Leaderboard
     @commands.command(name="top", aliases=["leaderboard", "sıralama"])

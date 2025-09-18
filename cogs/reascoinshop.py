@@ -239,7 +239,7 @@ class Market(commands.Cog):
             )
             await message.edit(embed=embed)
 
-    @commands.command(name='bakiye', aliases=['bal', 'balance', 'coin'])
+    @commands.command(name='coin', aliases=['bal', 'balance', 'bakiye'])
     async def balance(self, ctx, user: discord.Member = None):
         """Coin bakiyesini göster"""
         if user is None:
