@@ -259,5 +259,38 @@ class ReasMoney(commands.Cog):
     def cog_unload(self):
         self.voice_reward_task.cancel()
 
+    @commands.command(name="coinduzenle", aliases=["setcoins"])
+    @commands.is_owner()
+    async def set_coins(self, ctx, member: discord.Member, amount: int):
+        if amount == 0:
+            await ctx.send("Coin miktarı 0 olamaz.")
+            return
+        await self.add_coins(member.id, amount)
+        if amount > 0:
+            await ctx.send(f"✅ {member.display_name} kullanıcısına **{amount}** coin eklendi.")
+        else:
+            await ctx.send(f"✅ {member.display_name} kullanıcısının coininden **{-amount}** coin çıkarıldı.")
+
+    @commands.command(name="resetcoins", aliases=["coinsıfırla"])
+    @commands.is_owner()
+    async def reset_coins(self, ctx, member: discord.Member):
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("UPDATE users SET reas_coin = 0 WHERE user_id = ?", (member.id,))
+            await db.commit()
+        await ctx.send(f"✅ {member.display_name} kullanıcısının coin miktarı sıfırlandı.")
+
+
+    @commands.command(name="modcoinkomutları", aliases=["modcoin"])
+    @commands.is_owner()  # Sadece bot sahibi kullanabilir
+    async def mod_coin_commands(self, ctx):
+        """Mod coin komutlarını gösterir"""
+        embed = discord.Embed(
+            title="🔧 Mod Coin Komutları",
+            color=discord.Color.blue()
+        )
+        embed.add_field(name="r!setcoins @kullanıcı miktar", value="Belirtilen kullanıcıya miktar kadar coin ekler veya çıkarır. (miktar negatif ise çıkarır)", inline=False)
+        embed.add_field(name="r!resetcoins @kullanıcı", value="Belirtilen kullanıcının coin miktarını sıfırlar.", inline=False)
+        await ctx.send(embed=embed)
+
 async def setup(bot):
     await bot.add_cog(ReasMoney(bot))

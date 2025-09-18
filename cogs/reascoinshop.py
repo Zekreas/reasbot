@@ -15,21 +15,21 @@ class Market(commands.Cog):
                 "items": {
                     "mavi renk": {
                         "name": "Mavi Rol",
-                        "price": 100,
+                        "price": 1000,
                         "role_id": 1417903608225333469,
                         "description": "Mavi renkli özel rol",
                         "item_type": "color_role"
                     },
                     "yeşil renk": {
                         "name": "Yeşil Rol",
-                        "price": 100,
+                        "price": 1000,
                         "role_id": 1418320278827827322,
                         "description": "Yeşil renkli özel rol",
                         "item_type": "color_role"
                     },
                     "pembe renk": {
                         "name": "Pembe Rol",
-                        "price": 100,
+                        "price": 1000,
                         "role_id": 1405194610078388224,
                         "description": "Pembe renkli özel rol",
                         "item_type": "color_role"
