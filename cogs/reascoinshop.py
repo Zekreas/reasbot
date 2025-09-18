@@ -35,6 +35,25 @@ class Market(commands.Cog):
                         "item_type": "color_role"
                     }
                 }
+            },
+            "özel_roller": {
+                "emoji": "⭐",
+                "items": {
+                    "vip": {
+                        "name": "VIP Üye",
+                        "price": 500,
+                        "role_id": 1234567890123456789,  # Kendi VIP role ID'nizi yazın
+                        "description": "Özel VIP üye rolü - direkt verilir",
+                        "item_type": "permanent_role"
+                    },
+                    "destekçi": {
+                        "name": "Destekçi",
+                        "price": 300,
+                        "role_id": 1234567890123456790,  # Kendi Destekçi role ID'nizi yazın
+                        "description": "Sunucu destekçisi rolü - direkt verilir",
+                        "item_type": "permanent_role"
+                    }
+                }
             }
         }
 
@@ -234,12 +253,13 @@ class Market(commands.Cog):
 
         user_id = ctx.author.id
         
-        # Envaterde var mı kontrol et
-        inventory = self.get_user_inventory(user_id)
-        for inv_item in inventory:
-            if inv_item[0] == found_key:  # item_key kontrolü
-                await ctx.send("❌ Bu ürün zaten envanterinizde var! `r!envanter` komutuyla kontrol edebilirsiniz.")
-                return
+        # Sadece renk ürünleri için envanter kontrolü
+        if found_item.get('item_type') == 'color_role':
+            inventory = self.get_user_inventory(user_id, 'color_role')
+            for inv_item in inventory:
+                if inv_item[0] == found_key:  # item_key kontrolü
+                    await ctx.send("❌ Bu renk zaten envanterinizde var! `r!envanter renkler` komutuyla kontrol edebilirsiniz.")
+                    return
 
         user_coins = self.get_user_coins(user_id)
         
@@ -252,6 +272,17 @@ class Market(commands.Cog):
             )
             await ctx.send(embed=embed)
             return
+
+        # Rol kontrolü (renk olmayan ürünler için)
+        if found_item.get('item_type') != 'color_role' and 'role_id' in found_item:
+            role = ctx.guild.get_role(found_item['role_id'])
+            if role is None:
+                await ctx.send("❌ Bu rol sunucuda bulunamadı!")
+                return
+            
+            if role in ctx.author.roles:
+                await ctx.send("❌ Bu role zaten sahipsiniz!")
+                return
 
         # Satın alma onayı
         embed = discord.Embed(
@@ -301,14 +332,41 @@ class Market(commands.Cog):
                 new_balance = current_coins - found_item['price']
                 self.update_user_coins(user_id, new_balance)
 
-                # Envatere ekle
-                self.add_to_inventory(user_id, found_key, found_item)
+                # Sadece renk ürünleri envatere eklenir
+                if found_item.get('item_type') == 'color_role':
+                    self.add_to_inventory(user_id, found_key, found_item)
+                    
+                    embed = discord.Embed(
+                        title="✅ Satın Alma Başarılı!",
+                        description=f"**{found_item['name']}** envanterinize eklendi!\n`r!envanter renkler` komutuyla görüntüleyip `r!kullan {found_key}` ile kullanabilirsiniz.",
+                        color=discord.Color.green()
+                    )
+                else:
+                    # Diğer ürünler direkt uygulanır (rol verilir vs.)
+                    success = True
+                    if 'role_id' in found_item:
+                        try:
+                            role = ctx.guild.get_role(found_item['role_id'])
+                            await ctx.author.add_roles(role, reason="Market satın alma")
+                        except discord.Forbidden:
+                            success = False
+                            # Coin'leri geri ver
+                            self.update_user_coins(user_id, current_coins)
+                            embed = discord.Embed(
+                                title="❌ Yetki Hatası",
+                                description="Bu rolü verme yetkim yok! Coin'leriniz iade edildi.",
+                                color=discord.Color.red()
+                            )
+                            await message.edit(embed=embed)
+                            return
 
-                embed = discord.Embed(
-                    title="✅ Satın Alma Başarılı!",
-                    description=f"**{found_item['name']}** envanterinize eklendi!\n`r!envanter` komutuyla görüntüleyip kullanabilirsiniz.",
-                    color=discord.Color.green()
-                )
+                    if success:
+                        embed = discord.Embed(
+                            title="✅ Satın Alma Başarılı!",
+                            description=f"**{found_item['name']}** başarıyla satın alındı ve uygulandı!",
+                            color=discord.Color.green()
+                        )
+                
                 embed.add_field(name="💰 Ödenen", value=f"{found_item['price']} Reas Coin", inline=True)
                 embed.add_field(name="💳 Kalan Bakiye", value=f"{new_balance} Reas Coin", inline=True)
                 await message.edit(embed=embed)
