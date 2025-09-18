@@ -6,6 +6,7 @@ import asyncio
 class Market(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.setup_inventory_table()
         
         # Market kategorileri ve ürünleri
         self.market_items = {
@@ -16,23 +17,48 @@ class Market(commands.Cog):
                         "name": "Mavi Rol",
                         "price": 100,
                         "role_id": 1417903608225333469,
+                        "description": "Mavi renkli özel rol",
+                        "item_type": "color_role"
                     },
-                    # Buraya daha fazla renk ekleyebilirsiniz
                     "yeşil renk": {
                         "name": "Yeşil Rol",
                         "price": 100,
                         "role_id": 1418320278827827322,
+                        "description": "Yeşil renkli özel rol",
+                        "item_type": "color_role"
                     },
                     "pembe renk": {
                         "name": "Pembe Rol",
                         "price": 100,
                         "role_id": 1405194610078388224,
+                        "description": "Pembe renkli özel rol",
+                        "item_type": "color_role"
                     }
                 }
             }
-            # Buraya yeni kategoriler ekleyebilirsiniz
         }
 
+    def setup_inventory_table(self):
+        """Envanter tablosunu oluştur"""
+        conn = self.get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_inventory (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                item_key TEXT NOT NULL,
+                item_name TEXT NOT NULL,
+                item_type TEXT NOT NULL,
+                role_id INTEGER,
+                purchased_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                is_active INTEGER DEFAULT 0,
+                UNIQUE(user_id, item_key)
+            )
+        ''')
+        
+        conn.commit()
+        conn.close()
 
     def get_db_connection(self):
         """Veritabanı bağlantısı"""
@@ -67,6 +93,69 @@ class Market(commands.Cog):
         conn.commit()
         conn.close()
 
+    def add_to_inventory(self, user_id, item_key, item_data):
+        """Envatere ürün ekle"""
+        conn = self.get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT OR IGNORE INTO user_inventory 
+            (user_id, item_key, item_name, item_type, role_id)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, item_key, item_data['name'], 
+              item_data.get('item_type', 'unknown'), 
+              item_data.get('role_id')))
+        
+        conn.commit()
+        conn.close()
+
+    def get_user_inventory(self, user_id, item_type=None):
+        """Kullanıcının envanterini getir"""
+        conn = self.get_db_connection()
+        cursor = conn.cursor()
+        
+        if item_type:
+            cursor.execute('''
+                SELECT item_key, item_name, item_type, role_id, is_active 
+                FROM user_inventory 
+                WHERE user_id = ? AND item_type = ?
+                ORDER BY purchased_date DESC
+            ''', (user_id, item_type))
+        else:
+            cursor.execute('''
+                SELECT item_key, item_name, item_type, role_id, is_active 
+                FROM user_inventory 
+                WHERE user_id = ?
+                ORDER BY item_type, purchased_date DESC
+            ''', (user_id,))
+        
+        result = cursor.fetchall()
+        conn.close()
+        
+        return result
+
+    def update_active_item(self, user_id, item_key, item_type):
+        """Aktif öğeyi güncelle (aynı türdeki diğerlerini pasif yap)"""
+        conn = self.get_db_connection()
+        cursor = conn.cursor()
+        
+        # Önce aynı türdeki tüm öğeleri pasif yap
+        cursor.execute('''
+            UPDATE user_inventory 
+            SET is_active = 0 
+            WHERE user_id = ? AND item_type = ?
+        ''', (user_id, item_type))
+        
+        # Seçilen öğeyi aktif yap
+        cursor.execute('''
+            UPDATE user_inventory 
+            SET is_active = 1 
+            WHERE user_id = ? AND item_key = ?
+        ''', (user_id, item_key))
+        
+        conn.commit()
+        conn.close()
+
     def create_market_embed(self, category=None):
         """Market embed'i oluştur"""
         if category is None:
@@ -84,7 +173,7 @@ class Market(commands.Cog):
                     inline=True
                 )
             
-            embed.set_footer(text="Kullanım: r!market <kategori>")
+            embed.set_footer(text="Kullanım: r!market <kategori> | r!envanter ile envanterinizi görün")
             
         else:
             # Kategori sayfası
@@ -109,29 +198,6 @@ class Market(commands.Cog):
         
         return embed
 
-    def get_color_roles(self):
-        """Renk rollerinin ID'lerini döndür"""
-        color_roles = []
-        if "renkler" in self.market_items:
-            for item_data in self.market_items["renkler"]["items"].values():
-                if "role_id" in item_data:
-                    color_roles.append(item_data["role_id"])
-        return color_roles
-
-    async def remove_color_roles(self, member):
-        """Kullanıcının sahip olduğu tüm renk rollerini kaldır"""
-        color_role_ids = self.get_color_roles()
-        roles_to_remove = []
-        
-        for role in member.roles:
-            if role.id in color_role_ids:
-                roles_to_remove.append(role)
-        
-        if roles_to_remove:
-            await member.remove_roles(*roles_to_remove, reason="Yeni renk rolü için eski renk kaldırıldı")
-            return [role.name for role in roles_to_remove]
-        return []
-
     @commands.command(name='market', aliases=['m'])
     async def market(self, ctx, kategori=None):
         """Market komutunu göster"""
@@ -144,19 +210,21 @@ class Market(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='satinal', aliases=['buy', 'al'])
-    async def buy_item(self, ctx, item_name=None):
+    async def buy_item(self, ctx, *, item_name=None):
         """Ürün satın alma"""
         if item_name is None:
-            await ctx.send("❌ Satın almak istediğiniz ürünü belirtiniz! Örnek: `r!satinal mavi`")
+            await ctx.send("❌ Satın almak istediğiniz ürünü belirtiniz! Örnek: `r!satinal mavi renk`")
             return
 
         # Ürünü bul
         found_item = None
+        found_key = None
         found_category = None
         
         for category, cat_data in self.market_items.items():
             if item_name.lower() in cat_data['items']:
                 found_item = cat_data['items'][item_name.lower()]
+                found_key = item_name.lower()
                 found_category = category
                 break
         
@@ -165,6 +233,14 @@ class Market(commands.Cog):
             return
 
         user_id = ctx.author.id
+        
+        # Envaterde var mı kontrol et
+        inventory = self.get_user_inventory(user_id)
+        for inv_item in inventory:
+            if inv_item[0] == found_key:  # item_key kontrolü
+                await ctx.send("❌ Bu ürün zaten envanterinizde var! `r!envanter` komutuyla kontrol edebilirsiniz.")
+                return
+
         user_coins = self.get_user_coins(user_id)
         
         # Coin kontrolü
@@ -177,22 +253,6 @@ class Market(commands.Cog):
             await ctx.send(embed=embed)
             return
 
-        # Rol kontrolü (sadece rol ürünleri için)
-        removed_roles = []
-        if 'role_id' in found_item:
-            role = ctx.guild.get_role(found_item['role_id'])
-            if role is None:
-                await ctx.send("❌ Bu rol sunucuda bulunamadı!")
-                return
-            
-            if role in ctx.author.roles:
-                await ctx.send("❌ Bu role zaten sahipsiniz!")
-                return
-            
-            # Eğer renk kategorisindeyse, mevcut renk rollerini kaldır
-            if found_category == "renkler":
-                removed_roles = await self.remove_color_roles(ctx.author)
-
         # Satın alma onayı
         embed = discord.Embed(
             title="🛒 Satın Alma Onayı",
@@ -202,14 +262,6 @@ class Market(commands.Cog):
         embed.add_field(name="💰 Fiyat", value=f"{found_item['price']} Reas Coin", inline=True)
         embed.add_field(name="💳 Mevcut Bakiye", value=f"{user_coins} Reas Coin", inline=True)
         embed.add_field(name="💳 Kalan Bakiye", value=f"{user_coins - found_item['price']} Reas Coin", inline=True)
-        
-        if removed_roles and found_category == "renkler":
-            embed.add_field(
-                name="⚠️ Uyarı", 
-                value=f"Mevcut renk rolünüz ({', '.join(removed_roles)}) kaldırılacak!", 
-                inline=False
-            )
-        
         embed.set_footer(text="✅ ile onaylayın, ❌ ile iptal edin (30 saniye)")
 
         message = await ctx.send(embed=embed)
@@ -234,7 +286,7 @@ class Market(commands.Cog):
                 return
 
             elif str(reaction.emoji) == '✅':
-                # Son kontrol (eşzamanlılık için)
+                # Son kontrol
                 current_coins = self.get_user_coins(user_id)
                 if current_coins < found_item['price']:
                     embed = discord.Embed(
@@ -249,37 +301,17 @@ class Market(commands.Cog):
                 new_balance = current_coins - found_item['price']
                 self.update_user_coins(user_id, new_balance)
 
-                # Rol ver (eğer rol ürünüyse)
-                success = True
-                if 'role_id' in found_item:
-                    try:
-                        # Renk kategorisindeyse önce eski renk rollerini kaldır
-                        if found_category == "renkler":
-                            await self.remove_color_roles(ctx.author)
-                        
-                        role = ctx.guild.get_role(found_item['role_id'])
-                        await ctx.author.add_roles(role, reason="Market satın alma")
-                    except discord.Forbidden:
-                        success = False
-                        # Coin'leri geri ver
-                        self.update_user_coins(user_id, current_coins)
-                        embed = discord.Embed(
-                            title="❌ Yetki Hatası",
-                            description="Bu rolü verme yetkim yok! Coin'leriniz iade edildi.",
-                            color=discord.Color.red()
-                        )
-                        await message.edit(embed=embed)
-                        return
+                # Envatere ekle
+                self.add_to_inventory(user_id, found_key, found_item)
 
-                if success:
-                    embed = discord.Embed(
-                        title="✅ Satın Alma Başarılı!",
-                        description=f"**{found_item['name']}** başarıyla satın alındı!",
-                        color=discord.Color.green()
-                    )
-                    embed.add_field(name="💰 Ödenen", value=f"{found_item['price']} Reas Coin", inline=True)
-                    embed.add_field(name="💳 Kalan Bakiye", value=f"{new_balance} Reas Coin", inline=True)
-                    await message.edit(embed=embed)
+                embed = discord.Embed(
+                    title="✅ Satın Alma Başarılı!",
+                    description=f"**{found_item['name']}** envanterinize eklendi!\n`r!envanter` komutuyla görüntüleyip kullanabilirsiniz.",
+                    color=discord.Color.green()
+                )
+                embed.add_field(name="💰 Ödenen", value=f"{found_item['price']} Reas Coin", inline=True)
+                embed.add_field(name="💳 Kalan Bakiye", value=f"{new_balance} Reas Coin", inline=True)
+                await message.edit(embed=embed)
 
         except asyncio.TimeoutError:
             embed = discord.Embed(
@@ -288,6 +320,133 @@ class Market(commands.Cog):
                 color=discord.Color.orange()
             )
             await message.edit(embed=embed)
+
+    @commands.command(name='envanter', aliases=['inventory', 'inv'])
+    async def inventory(self, ctx, kategori=None):
+        """Envanteri göster"""
+        user_id = ctx.author.id
+        
+        if kategori == "renkler" or kategori == "renk":
+            inventory = self.get_user_inventory(user_id, "color_role")
+            title = "🎨 Renk Envanteriniz"
+        else:
+            inventory = self.get_user_inventory(user_id)
+            title = "📦 Envanteriniz"
+        
+        if not inventory:
+            embed = discord.Embed(
+                title=title,
+                description="Envanteriniz boş! `r!market` ile ürün satın alabilirsiniz.",
+                color=discord.Color.orange()
+            )
+            await ctx.send(embed=embed)
+            return
+
+        embed = discord.Embed(
+            title=title,
+            description="Sahip olduğunuz ürünler:",
+            color=discord.Color.blue()
+        )
+
+        color_items = []
+        other_items = []
+        
+        for item in inventory:
+            item_key, item_name, item_type, role_id, is_active = item
+            status = "🟢 Aktif" if is_active else "⚪ Pasif"
+            
+            if item_type == "color_role":
+                color_items.append(f"{status} **{item_name}**\n`r!kullan {item_key}`")
+            else:
+                other_items.append(f"{status} **{item_name}**\n`r!kullan {item_key}`")
+
+        if color_items:
+            embed.add_field(
+                name="🎨 Renkler",
+                value="\n\n".join(color_items),
+                inline=False
+            )
+        
+        if other_items:
+            embed.add_field(
+                name="📦 Diğer Ürünler",
+                value="\n\n".join(other_items),
+                inline=False
+            )
+
+        embed.set_footer(text="Kullanım: r!kullan <ürün_adı> ile ürünü aktif yapın")
+        await ctx.send(embed=embed)
+
+    @commands.command(name='kullan', aliases=['use', 'equip'])
+    async def use_item(self, ctx, *, item_name=None):
+        """Envaterdeki ürünü kullan/aktif et"""
+        if item_name is None:
+            await ctx.send("❌ Kullanmak istediğiniz ürünü belirtiniz! Örnek: `r!kullan mavi renk`")
+            return
+
+        user_id = ctx.author.id
+        inventory = self.get_user_inventory(user_id)
+        
+        # Ürünü envaterde bul
+        found_item = None
+        for inv_item in inventory:
+            item_key, item_name_db, item_type, role_id, is_active = inv_item
+            if item_name.lower() == item_key.lower() or item_name.lower() in item_name_db.lower():
+                found_item = inv_item
+                break
+        
+        if found_item is None:
+            await ctx.send("❌ Bu ürün envanterinizde bulunamadı! `r!envanter` ile kontrol edin.")
+            return
+
+        item_key, item_name_db, item_type, role_id, is_active = found_item
+
+        if is_active:
+            await ctx.send("❌ Bu ürün zaten aktif durumda!")
+            return
+
+        # Renk rolü işlemi
+        if item_type == "color_role":
+            try:
+                # Önce mevcut aktif renk rollerini kaldır
+                current_inventory = self.get_user_inventory(user_id, "color_role")
+                for inv_item in current_inventory:
+                    _, _, _, old_role_id, old_is_active = inv_item
+                    if old_is_active and old_role_id:
+                        old_role = ctx.guild.get_role(old_role_id)
+                        if old_role and old_role in ctx.author.roles:
+                            await ctx.author.remove_roles(old_role, reason="Renk değiştirme")
+
+                # Yeni rolü ver
+                new_role = ctx.guild.get_role(role_id)
+                if new_role is None:
+                    await ctx.send("❌ Bu rol sunucuda bulunamadı!")
+                    return
+                
+                await ctx.author.add_roles(new_role, reason="Envanter kullanımı")
+                
+                # Veritabanını güncelle
+                self.update_active_item(user_id, item_key, item_type)
+                
+                embed = discord.Embed(
+                    title="✅ Renk Değiştirildi!",
+                    description=f"**{item_name_db}** artık aktif!",
+                    color=new_role.color if new_role.color != discord.Color.default() else discord.Color.green()
+                )
+                await ctx.send(embed=embed)
+
+            except discord.Forbidden:
+                await ctx.send("❌ Bu rolü verme yetkim yok!")
+                return
+        else:
+            # Diğer ürün türleri için genişletilebilir
+            self.update_active_item(user_id, item_key, item_type)
+            embed = discord.Embed(
+                title="✅ Ürün Aktif!",
+                description=f"**{item_name_db}** artık aktif!",
+                color=discord.Color.green()
+            )
+            await ctx.send(embed=embed)
 
     @commands.command(name='coin', aliases=['bal', 'balance', 'bakiye'])
     async def balance(self, ctx, user: discord.Member = None):
