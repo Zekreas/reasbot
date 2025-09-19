@@ -4,22 +4,7 @@ import sqlite3
 import aiosqlite
 import asyncio
 from datetime import date, datetime, timedelta
-
-def check_channel():
-    """Sadece belirli kanalda komutların çalışmasını sağlayan decorator"""
-    async def predicate(ctx):
-        allowed_channel_id = 1418328370915184730  # Reas coin kanalı ID'si
-        if ctx.channel.id != allowed_channel_id:
-            allowed_channel = ctx.guild.get_channel(allowed_channel_id)
-            channel_mention = allowed_channel.mention if allowed_channel else f"<#{allowed_channel_id}>"
-            msg = await ctx.send(f"❌ Bu komutu sadece {channel_mention} kanalında kullanabilirsiniz!") # Kullanıcıyı bilgilendir ve biraz bekleyip mesajı sil
-            await asyncio.sleep(1)
-            await ctx.message.delete()
-            await msg.delete()
-            return False
-        return True
-    return commands.check(predicate)
-
+from cogs.reascoinshop import check_channel
 
 class ReasMoney(commands.Cog):
     def __init__(self, bot):

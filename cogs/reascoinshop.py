@@ -397,6 +397,8 @@ class Market(commands.Cog):
             )
             await message.edit(embed=embed)
 
+
+
     @commands.command(name='envanter', aliases=['inventory', 'inv'])
     @check_channel()
     async def inventory(self, ctx, kategori=None):
