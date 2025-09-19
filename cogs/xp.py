@@ -12,7 +12,8 @@ class xp(commands.Cog):
         
         # Ses kanalı takibi
         self.voice_users = {}  # {user_id: join_time}
-        
+        #her gün bu kanala aylık sıralama gönderilecek.
+        self.ayliksiralama = 1418538714937954434 #kanal idsi
         # Database setup
         self._setup_database()
         
@@ -26,7 +27,8 @@ class xp(commands.Cog):
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
-                voicehour INTEGER DEFAULT 0
+                voicehour INTEGER DEFAULT 0,
+                voicehourmonth INTEGER DEFAULT 0
             )
         """)
         conn.commit()
@@ -77,10 +79,102 @@ class xp(commands.Cog):
             async with aiosqlite.connect(self.db_path) as db:
                 await db.execute("""
                     INSERT INTO users (user_id, voicehour) VALUES (?, 1)
-                    ON CONFLICT(user_id) DO UPDATE SET voicehour = voicehour + 1
+                    ON CONFLICT(user_id) DO UPDATE SET voicehour = voicehour + 1, voicehourmonth = voicehourmonth + 1
                 """, (user_id,))
                 await db.commit()
     
+    @tasks.loop(hours=1)
+    async def reset_monthly_task(self):
+        now = datetime.now() + timedelta(hours=3)  # 3 saat ileri al
+        if now.day == 1 and now.hour == 1:  # Ayın ilk günü
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute("UPDATE users SET voicehourmonth = 0")
+                await db.commit()
+    @reset_monthly_task.before_loop
+    async def before_reset_monthly_task(self):
+        await self.bot.wait_until_ready()
+
+
+    @tasks.loop(hours=1)
+    async def send_monthly_leaderboard(self):
+        now = datetime.now() + timedelta(hours=3)  # 3 saat ileri al
+        if now.hour == 23:  # Ayın ilk günü saat 00:00'da
+            async with aiosqlite.connect(self.db_path) as db:
+                async with db.execute("""
+                    SELECT user_id, voicehourmonth FROM users 
+                    WHERE voicehourmonth > 0
+                    ORDER BY voicehourmonth DESC
+                    LIMIT 10
+                """) as cursor:
+                    top_rows = await cursor.fetchall()
+                #bekleme süresine gir
+                asyncio.sleep(3600) #1 saat bekle
+            
+            if not top_rows:
+                return
+            
+            embed = discord.Embed(
+                title="🎤 Aylık Ses Kanalı Sıralaması",
+                color=discord.Color.gold(),
+                description="İşte bu ayın en çok ses kanalında kalan kullanıcıları!"
+            )
+            
+            description = ""
+            for i, (user_id, voicehourmonth) in enumerate(top_rows, 1):
+                user = self.bot.get_user(user_id)
+                name = user.display_name if user else f"Kullanıcı {user_id}"
+                
+                medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+                description += f"{medal} {name}: **{voicehourmonth}** saat\n"
+            
+            embed.description = description
+            
+            channel = self.bot.get_channel(self.ayliksiralama)
+            if channel:
+                await channel.send(embed=embed)
+    @send_monthly_leaderboard.before_loop
+    async def before_send_monthly_leaderboard(self):
+        await self.bot.wait_until_ready()
+
+
+    @commands.command(name="aylikgondermanuel")
+    async def aylikgondermanuel(self, ctx):
+        """Aylık sıralamayı manuel olarak gönderir (sadece yetkililer)"""
+        if not ctx.author.guild_permissions.administrator:
+            await ctx.send("Bu komutu kullanmak için yönetici olmalısın.")
+            return
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("""
+                SELECT user_id, voicehourmonth FROM users 
+                WHERE voicehourmonth > 0
+                ORDER BY voicehourmonth DESC
+                LIMIT 10
+            """) as cursor:
+                top_rows = await cursor.fetchall()
+        
+        if not top_rows:
+            await ctx.send("Henüz aylık ses saati kazanan yok!")
+            return
+        
+        embed = discord.Embed(
+            title="🎤 Aylık Ses Kanalı Sıralaması",
+            color=discord.Color.gold(),
+            description="İşte bu ayın en çok ses kanalında kalan kullanıcıları!"
+        )
+        
+        description = ""
+        for i, (user_id, voicehourmonth) in enumerate(top_rows, 1):
+            user = self.bot.get_user(user_id)
+            name = user.display_name if user else f"Kullanıcı {user_id}"
+            
+            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+            description += f"{medal} {name}: **{voicehourmonth}** saat\n"
+        
+        embed.description = description
+        
+        await ctx.send(embed=embed)
+
     # Ses sıralaması komutu
     @commands.command(name="voicetop", aliases=["sestop", "sesistatistikleri", "ses"])
     async def voice_leaderboard(self, ctx, limit: int = 10):
