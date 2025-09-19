@@ -36,7 +36,7 @@ class Market(commands.Cog):
                     }
                 }
             },
-            "özel roller": {
+            "özelroller": {
                 "emoji": "🛡️",
                 "items": {
                     "emoji rolü": {
