@@ -89,7 +89,6 @@ class ReasMoney(commands.Cog):
         await ctx.send(f"✅ Günlük ödülünü aldın! {reward} coin eklendi 💰")
     
     @commands.command( name="coinhaklarim" )
-    @commands.is_owner()
     async def testcoins(self, ctx):
         user_id = ctx.author.id
         coins = await self.get_user_coins(user_id)
