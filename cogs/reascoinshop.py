@@ -17,25 +17,45 @@ class Market(commands.Cog):
                         "name": "Mavi Rol",
                         "price": 1000,
                         "role_id": 1417903608225333469,
-                        "description": "Mavi renkli özel rol",
+                        "description": "Mavi renkli isim rolü",
                         "item_type": "color_role"
                     },
                     "yeşil renk": {
                         "name": "Yeşil Rol",
                         "price": 1000,
                         "role_id": 1418320278827827322,
-                        "description": "Yeşil renkli özel rol",
+                        "description": "Yeşil renkli isim rolü",
                         "item_type": "color_role"
                     },
                     "pembe renk": {
                         "name": "Pembe Rol",
                         "price": 1000,
                         "role_id": 1405194610078388224,
-                        "description": "Pembe renkli özel rol",
+                        "description": "Pembe renkli isim rolü",
                         "item_type": "color_role"
                     }
                 }
+            },
+            "özel roller": {
+                "emoji": "🛡️",
+                "items": {
+                    "emoji rolü": {
+                        "name": "Harici Emoji ve Çıkartma",
+                        "price": 1000,
+                        "role_id": 1418497327840104538,
+                        "description": "Sunucuda harici emoji ve çıkartma kullanma rolü",
+                        "item_type": "special_role"
+                    },
+                    "isim rolü": {
+                        "name": "Özel İsimRolü",
+                        "price": 2000,
+                        "role_id": 1418499377835806760,
+                        "description": "Sunucuda isminizi değiştirebilme rolü",
+                        "item_type": "special_role"
+                    }
+                }
             }
+            
         }
 
     def setup_inventory_table(self):
