@@ -10,9 +10,10 @@ def check_channel():
         if ctx.channel.id != allowed_channel_id:
             allowed_channel = ctx.guild.get_channel(allowed_channel_id)
             channel_mention = allowed_channel.mention if allowed_channel else f"<#{allowed_channel_id}>"
-            await ctx.send(f"❌ Bu komutu sadece {channel_mention} kanalında kullanabilirsiniz!") # Kullanıcıyı bilgilendir ve biraz bekleyip mesajı sil
+            msg = await ctx.send(f"❌ Bu komutu sadece {channel_mention} kanalında kullanabilirsiniz!") # Kullanıcıyı bilgilendir ve biraz bekleyip mesajı sil
             await asyncio.sleep(2)
             await ctx.message.delete()
+            await msg.delete()
             return False
         return True
     return commands.check(predicate)
