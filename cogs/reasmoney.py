@@ -79,6 +79,14 @@ class ReasMoney(commands.Cog):
                 row = await cursor.fetchone()
                 last_daily = row[0] if row else None
             
+            # eğer kanal 1418328370915184730 değil ise ödül verme
+            if ctx.channel.id != 1418328370915184730:
+                msg = await ctx.send("❌ Günlük ödülünü sadece <#1418328370915184730> kanalında alabilirsin!")
+                await asyncio.sleep(1)
+                await msg.delete()
+                await ctx.message.delete()
+                return
+
             if last_daily == today:
                 await ctx.send("❌ Bugün günlük ödülünü zaten aldın. Yarın tekrar dene!")
                 return
