@@ -10,7 +10,9 @@ def check_channel():
         if ctx.channel.id != allowed_channel_id:
             allowed_channel = ctx.guild.get_channel(allowed_channel_id)
             channel_mention = allowed_channel.mention if allowed_channel else f"<#{allowed_channel_id}>"
-            await ctx.send(f"❌ Bu komutu sadece {channel_mention} kanalında kullanabilirsiniz!")
+            await ctx.send(f"❌ Bu komutu sadece {channel_mention} kanalında kullanabilirsiniz!") # Kullanıcıyı bilgilendir ve biraz bekleyip mesajı sil
+            await asyncio.sleep(2)
+            await ctx.message.delete()
             return False
         return True
     return commands.check(predicate)
@@ -243,6 +245,7 @@ class Market(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='satinal', aliases=['buy', 'al'])
+    @check_channel()
     async def buy_item(self, ctx, *, item_name=None):
         """Ürün satın alma"""
         if item_name is None:
@@ -394,6 +397,7 @@ class Market(commands.Cog):
             await message.edit(embed=embed)
 
     @commands.command(name='envanter', aliases=['inventory', 'inv'])
+    @check_channel()
     async def inventory(self, ctx, kategori=None):
         """Envanteri göster"""
         user_id = ctx.author.id
@@ -450,6 +454,7 @@ class Market(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name='kullan', aliases=['use', 'equip'])
+    @check_channel()
     async def use_item(self, ctx, *, item_name=None):
         """Envaterdeki ürünü kullan/aktif et"""
         if item_name is None:
@@ -521,6 +526,7 @@ class Market(commands.Cog):
             await ctx.send(embed=embed)
 
     @commands.command(name='coin', aliases=['bal', 'balance', 'bakiye'])
+    @check_channel()
     async def balance(self, ctx, user: discord.Member = None):
         """Coin bakiyesini göster"""
         if user is None:
