@@ -47,7 +47,7 @@ class Market(commands.Cog):
                         "item_type": "special_role"
                     },
                     "isim rolü": {
-                        "name": "Özel İsimRolü",
+                        "name": "Özel İsim Rolü",
                         "price": 2000,
                         "role_id": 1418499377835806760,
                         "description": "Sunucuda isminizi değiştirebilme rolü",
