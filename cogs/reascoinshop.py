@@ -36,7 +36,7 @@ class Market(commands.Cog):
                     }
                 }
             },
-            "özelroller": {
+            "roller": {
                 "emoji": "🛡️",
                 "items": {
                     "emoji rolü": {
@@ -190,7 +190,7 @@ class Market(commands.Cog):
                 embed.add_field(
                     name=f"{cat_data['emoji']} {cat_name.title()}",
                     value=f"`r!market {cat_name}` ile görüntüle",
-                    inline=True
+                    inline=False
                 )
             
             embed.set_footer(text="Kullanım: r!market <kategori> | r!envanter ile envanterinizi görün")
