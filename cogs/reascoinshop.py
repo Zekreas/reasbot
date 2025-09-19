@@ -3,6 +3,18 @@ from discord.ext import commands
 import sqlite3
 import asyncio
 
+def check_channel():
+    """Sadece belirli kanalda komutların çalışmasını sağlayan decorator"""
+    async def predicate(ctx):
+        allowed_channel_id = 1418328370915184730  # Reas coin kanalı ID'si
+        if ctx.channel.id != allowed_channel_id:
+            allowed_channel = ctx.guild.get_channel(allowed_channel_id)
+            channel_mention = allowed_channel.mention if allowed_channel else f"<#{allowed_channel_id}>"
+            await ctx.send(f"❌ Bu komutu sadece {channel_mention} kanalında kullanabilirsiniz!")
+            return False
+        return True
+    return commands.check(predicate)
+
 class Market(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -219,6 +231,7 @@ class Market(commands.Cog):
         return embed
 
     @commands.command(name='market', aliases=['m'])
+    @check_channel()
     async def market(self, ctx, kategori=None):
         """Market komutunu göster"""
         embed = self.create_market_embed(kategori)
