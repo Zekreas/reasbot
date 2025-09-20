@@ -94,7 +94,6 @@ class xp(commands.Cog):
     async def before_reset_monthly_task(self):
         await self.bot.wait_until_ready()
 
-
     @tasks.loop(hours=1)
     async def send_monthly_leaderboard(self):
         now = datetime.now() + timedelta(hours=3)  # 3 saat ileri al
@@ -107,7 +106,6 @@ class xp(commands.Cog):
                     LIMIT 10
                 """) as cursor:
                     top_rows = await cursor.fetchall()
-                #bekleme süresine gir
             
             if not top_rows:
                 return
@@ -130,7 +128,14 @@ class xp(commands.Cog):
             
             channel = self.bot.get_channel(self.ayliksiralama)
             if channel:
+                # Önce botun eski mesajlarını sil
+                async for message in channel.history(limit=50):  # son 50 mesaja bak
+                    if message.author == self.bot.user:
+                        await message.delete()
+
+                # Yeni mesajı gönder
                 await channel.send(embed=embed)
+
     @send_monthly_leaderboard.before_loop
     async def before_send_monthly_leaderboard(self):
         await self.bot.wait_until_ready()
