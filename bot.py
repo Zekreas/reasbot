@@ -346,11 +346,9 @@ async def on_ready():
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
 
-bot.command()
+@bot.command()
+@commands.is_owner()
 async def help(ctx):
-    if not await bot.is_owner(ctx.author):
-        return
-    
     help_text = "**Bot Komutları:**\n\n"
     
     for cog_name, cog in bot.cogs.items():
