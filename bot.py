@@ -346,18 +346,12 @@ async def on_ready():
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
 
-@bot.command(name="help")
-@commands.is_owner()
-async def help_command(ctx):
-    # Eğer default help'i kullanmak istiyorsan:
-    await ctx.send("Bu komutu sadece bot sahibi kullanabilir. Buraya kendi help embedini de koyabilirsin.")
+@bot.check
+async def globally_block_dms(ctx):
+    if ctx.command.name == 'help':
+        return await bot.is_owner(ctx.author)
+    return True
 
-# Hataları yakalamak için
-@help_command.error
-async def help_command_error(ctx, error):
-    if isinstance(error, commands.NotOwner):
-        await ctx.send("❌ Bu komutu sadece bot sahibi kullanabilir.")
-        
 @tasks.loop(seconds=30)
 async def gununhantigonder():
     channel = bot.get_channel(gununhanti_kanalid)
