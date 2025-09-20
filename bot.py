@@ -20,7 +20,7 @@ intents.message_content = True
 intents.members = True  # Üyeleri izlemek için gerekli izin
 intents.guilds = True  # Sunucuları izlemek için gerekli izin
 # Komutlar için prefix (ön ek) belirliyoruz
-bot = commands.Bot(command_prefix="r!", intents=intents)
+bot = commands.Bot(command_prefix="r!", intents=intents, help_command=None)
 
 initial_extensions = []
 
@@ -346,11 +346,26 @@ async def on_ready():
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
 
-@bot.check
-async def globally_block_dms(ctx):
-    if ctx.command.name == 'help':
-        return await bot.is_owner(ctx.author)
-    return True
+bot.command()
+async def help(ctx):
+    if not await bot.is_owner(ctx.author):
+        return
+    
+    help_text = "**Bot Komutları:**\n\n"
+    
+    for cog_name, cog in bot.cogs.items():
+        commands_list = [cmd.name for cmd in cog.get_commands() if not cmd.hidden]
+        if commands_list:
+            help_text += f"**{cog_name}:**\n"
+            help_text += ", ".join(commands_list) + "\n\n"
+    
+    # Cog'a ait olmayan komutlar
+    no_cog_commands = [cmd.name for cmd in bot.commands if cmd.cog is None and not cmd.hidden]
+    if no_cog_commands:
+        help_text += "**Diğer Komutlar:**\n"
+        help_text += ", ".join(no_cog_commands) + "\n\n"
+    
+    await ctx.send(help_text)
 
 @tasks.loop(seconds=30)
 async def gununhantigonder():
