@@ -6,6 +6,8 @@ import asyncio
 def check_channel():
     """Sadece belirli kanalda komutların çalışmasını sağlayan decorator"""
     async def predicate(ctx):
+        if ctx.command and ctx.command.name == 'help':
+            return True  # help komutu her kanalda çalışsın
         allowed_channel_id = 1418328370915184730  # Reas coin kanalı ID'si
         if ctx.channel.id != allowed_channel_id:
             allowed_channel = ctx.guild.get_channel(allowed_channel_id)
