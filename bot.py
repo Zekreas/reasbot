@@ -346,20 +346,18 @@ async def on_ready():
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
 
+@bot.command(name="help")
+@commands.is_owner()
+async def help_command(ctx):
+    # Eğer default help'i kullanmak istiyorsan:
+    await ctx.send("Bu komutu sadece bot sahibi kullanabilir. Buraya kendi help embedini de koyabilirsin.")
 
-@bot.command()
-async def help(ctx):
-    # Sadece bot sahibi kullanabilir
-    if ctx.author.id != 467395799697981440:  # Buraya kendi Discord ID'nizi yazın
-        #hiçbir şey yapma
-        return
-    
-    # Default help mesajını göstermek için
-    embed = discord.Embed(title="Komutlar", color=discord.Color.green())
-    for command in bot.commands:
-        embed.add_field(name=command.name, value=command.help or "Açıklama yok", inline=False)
-    await ctx.send(embed=embed)
-
+# Hataları yakalamak için
+@help_command.error
+async def help_command_error(ctx, error):
+    if isinstance(error, commands.NotOwner):
+        await ctx.send("❌ Bu komutu sadece bot sahibi kullanabilir.")
+        
 @tasks.loop(seconds=30)
 async def gununhantigonder():
     channel = bot.get_channel(gununhanti_kanalid)
