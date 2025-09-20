@@ -20,7 +20,7 @@ intents.message_content = True
 intents.members = True  # Üyeleri izlemek için gerekli izin
 intents.guilds = True  # Sunucuları izlemek için gerekli izin
 # Komutlar için prefix (ön ek) belirliyoruz
-bot = commands.Bot(command_prefix="r!", intents=intents, help_command=None)
+bot = commands.Bot(command_prefix="r!", intents=intents)
 
 initial_extensions = []
 
