@@ -18,6 +18,8 @@ def check_channel():
         return True
     return commands.check(predicate)
 
+
+
 class Market(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

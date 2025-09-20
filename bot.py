@@ -20,7 +20,7 @@ intents.message_content = True
 intents.members = True  # Üyeleri izlemek için gerekli izin
 intents.guilds = True  # Sunucuları izlemek için gerekli izin
 # Komutlar için prefix (ön ek) belirliyoruz
-bot = commands.Bot(command_prefix="r!", intents=intents)
+bot = commands.Bot(command_prefix="r!", intents=intents, help_command=None)
 
 initial_extensions = []
 
@@ -58,6 +58,8 @@ async def reload(ctx, cog: str):
         await ctx.send(f"✅ `{cog}` cog başarıyla yeniden yüklendi!")
     except Exception as e:
         await ctx.send(f"❌ `{cog}` cog yüklenirken hata oluştu:\n`{e}`")
+
+
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -147,7 +149,7 @@ channel_limits = {}
 
 
 @bot.command()
-@commands.has_permissions(manage_messages=True)
+@commands.is_owner()
 async def mesajgonder(ctx, *, mesaj: str): #seçilen kanala belirlenen mesaj gönderir. Komutu kullanan kişinin mesajını siler.
     await ctx.message.delete()  # Komutu kullanan kişinin mesajını sil
     await ctx.send(mesaj)  # Belirtilen mesajı gönder
@@ -193,6 +195,8 @@ async def on_message(message):
 
     # Komutların çalışabilmesi için
     await bot.process_commands(message)
+
+
 
 # Bot açılırken kaydedilmiş veriyi yükle
 if os.path.exists("limits.json"):
@@ -308,7 +312,7 @@ async def send_daily_report():
 
 
 @bot.command()
-@commands.has_permissions(administrator=True)
+@commands.is_owner()
 async def raporsifirla(ctx):
     global girenkisisayisi, cikankisisayisi
     girenkisisayisi = 0
@@ -342,8 +346,23 @@ async def on_ready():
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
 
+@commands.command(name="help")
+@commands.is_owner()
+async def help_command(self, ctx):
+    # Mevcut help içeriğini buraya bırakabilirsin
+    await ctx.send("Bu komut sadece bot sahibi tarafından kullanılabilir.")
 
-
+@bot.command()
+async def help(ctx):
+    # Sadece bot sahibi kullanabilir
+    if ctx.author.id != 467395799697981440:  # Buraya kendi Discord ID'nizi yazın
+        return await ctx.send("❌ Bu komutu sadece botun sahibi kullanabilir!")
+    
+    # Default help mesajını göstermek için
+    embed = discord.Embed(title="Komutlar", color=discord.Color.green())
+    for command in bot.commands:
+        embed.add_field(name=command.name, value=command.help or "Açıklama yok", inline=False)
+    await ctx.send(embed=embed)
 
 @tasks.loop(seconds=30)
 async def gununhantigonder():
@@ -364,7 +383,7 @@ async def gununhantigonder():
     
         
 @bot.command()
-@commands.has_permissions(administrator=True)
+@commands.is_owner()
 async def gununhanti(ctx):
     channel = bot.get_channel(gununhanti_kanalid)
     await channel.send(f"Bugün sunucumuzda toplam {channel.guild.member_count} kişi var! <:selam:1384247246924677313>")
@@ -424,7 +443,7 @@ async def rastgele_anime_gonder():
         print("Henüz zamanı değil")  # if içine girmezse bunu yazdırır
 
 @bot.command()
-@commands.has_permissions(administrator=True)
+@commands.is_owner()
 async def embedyaz(ctx):
     anime = get_rastgele_anime()
     puan = anime['score'] if anime['score'] is not None else 'Not available'
