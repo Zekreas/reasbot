@@ -108,7 +108,6 @@ class xp(commands.Cog):
                 """) as cursor:
                     top_rows = await cursor.fetchall()
                 #bekleme süresine gir
-                asyncio.sleep(3600) #1 saat bekle
             
             if not top_rows:
                 return
