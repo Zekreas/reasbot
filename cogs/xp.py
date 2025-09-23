@@ -19,7 +19,7 @@ class xp(commands.Cog):
         
         # Ses ödülü task'ını başlat
         self.voice_hour_task.start()
-    
+        self.send_monthly_leaderboard.start()
     def _setup_database(self):
         """Database'i kurar"""
         conn = sqlite3.connect(self.db_path)
@@ -135,7 +135,8 @@ class xp(commands.Cog):
 
                 # Yeni mesajı gönder
                 await channel.send(embed=embed)
-
+        else:
+            print("Aylık sıralama gönderme zamanı değil.")
     @send_monthly_leaderboard.before_loop
     async def before_send_monthly_leaderboard(self):
         await self.bot.wait_until_ready()
