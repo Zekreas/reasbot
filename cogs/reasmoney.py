@@ -5,6 +5,7 @@ import aiosqlite
 import asyncio
 from datetime import date, datetime, timedelta
 from cogs.reascoinshop import check_channel
+import random
 
 class ReasMoney(commands.Cog):
     def __init__(self, bot):
@@ -83,12 +84,31 @@ class ReasMoney(commands.Cog):
                 await ctx.send("❌ Bugün günlük ödülünü zaten aldın. Yarın tekrar dene!")
                 return
             
-            reward = 50  # günlük ödül miktarı (istersen değiştir)
+            reward = random.randint(15, 60)
             await self.add_coins(user_id, reward)
             await db.execute("UPDATE users SET last_daily = ? WHERE user_id = ?", (today, user_id))
             await db.commit()
         
-        await ctx.send(f"✅ Günlük ödülünü aldın! {reward} coin eklendi 💰")
+        high_rewards = [
+            f"🎉 Bugün şanslı günün! {reward} coin kazandın! 💎",
+            f"🔥 Muhteşem! Bugün {reward} coin senin oldu!",
+        ]
+        mid_rewards = [
+            f"✨ Güzel! {reward} coin kazandın. 💰",
+            f"Bugün {reward} coin topladın! 👍",
+        ]
+        low_rewards = [
+            f"😅 Bugünlük {reward} coin... Yarın daha iyi olabilir!",
+            f"🪙 Sade bir ödül: {reward} coin."
+        ]
+
+        if reward >= 50:
+            await ctx.send(random.choice(high_rewards))
+        elif reward >= 25:
+            await ctx.send(random.choice(mid_rewards))
+        else:
+            await ctx.send(random.choice(low_rewards))
+        
     
     @commands.command(name="coinhaklarim" )
     async def testcoins(self, ctx):
