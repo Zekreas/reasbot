@@ -66,6 +66,17 @@ class ReasMoney(commands.Cog):
             """, (user_id,))
             await db.commit()
     
+
+    @commands.command(name="testihtimal") #sadece bot sahibi
+    @commands.is_owner()
+    async def test_ihtimal(self, ctx):
+        if random.random() < 0.05:  # %5 şans
+            denemesayisi = 100
+            ctx.send(f"🎉 Tebrikler! %5 şansı tutturdun! {denemesayisi} deneme hakkın var!")
+        else:
+            await ctx.send("Maalesef, şansın yaver gitmedi. Tekrar dene!")
+
+
     # Günlük ödül komutu
     @commands.command(name="daily")
     @check_channel()
@@ -85,10 +96,7 @@ class ReasMoney(commands.Cog):
                 return
             
             
-            if random.random() < 0.05:  # %5 şans
-                reward = 100
-            else:
-                reward = random.randint(15, 60)
+            reward = random.randint(15, 60)
             await self.add_coins(user_id, reward)
             await db.execute("UPDATE users SET last_daily = ? WHERE user_id = ?", (today, user_id))
             await db.commit()
