@@ -90,16 +90,15 @@ class ReasMoney(commands.Cog):
             await db.commit()
         
         high_rewards = [
-            f"🎉 Bugün şanslı günün! {reward} coin kazandın! 💎",
-            f"🔥 Muhteşem! Bugün {reward} coin senin oldu!",
+            f"✅ Günlük ödülünü aldın! 🎉 Bugün şanslı günün! {reward} coin kazandın! 💎",
+            f"✅ Günlük ödülünü aldın! 🔥 Muhteşem! Bugün {reward} coin kazandın!",
         ]
         mid_rewards = [
-            f"✨ Güzel! {reward} coin kazandın. 💰",
-            f"Bugün {reward} coin topladın! 👍",
+            f"✅ Günlük ödülünü aldın! ✨ Güzel! {reward} coin kazandın. 💰",
+            f"✅ Günlük ödülünü aldın! Bugün {reward} coin topladın!",
         ]
         low_rewards = [
-            f"😅 Bugünlük {reward} coin... Yarın daha iyi olabilir!",
-            f"🪙 Sade bir ödül: {reward} coin."
+            f"✅ Günlük ödülünü aldın! Bugünlük {reward} coin... Yarın daha iyi olabilir!",
         ]
 
         if reward >= 50:
