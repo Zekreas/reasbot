@@ -84,7 +84,11 @@ class ReasMoney(commands.Cog):
                 await ctx.send("❌ Bugün günlük ödülünü zaten aldın. Yarın tekrar dene!")
                 return
             
-            reward = random.randint(15, 60)
+            
+            if random.random() < 0.05:  # %5 şans
+                reward = 100
+            else:
+                reward = random.randint(15, 60)
             await self.add_coins(user_id, reward)
             await db.execute("UPDATE users SET last_daily = ? WHERE user_id = ?", (today, user_id))
             await db.commit()
@@ -100,8 +104,10 @@ class ReasMoney(commands.Cog):
         low_rewards = [
             f"✅ Günlük ödülünü aldın! Bugünlük {reward} coin... Yarın daha iyi olabilir!",
         ]
-
-        if reward >= 50:
+        
+        if reward == 100:
+            await ctx.send("✅ Günlük ödülünü aldın! 🎉 Büyük ikramiyeyi tutturdun ve 100 coin kazandın!💎")
+        elif reward >= 50:
             await ctx.send(random.choice(high_rewards))
         elif reward >= 25:
             await ctx.send(random.choice(mid_rewards))
