@@ -71,6 +71,7 @@ class ReasMoney(commands.Cog):
     @check_channel()
     async def daily(self, ctx):
         user_id = ctx.author.id
+        logkanali = 1384165277419180133
         today = date.today().isoformat()
         
         await self.get_or_create_user(user_id)
@@ -87,6 +88,8 @@ class ReasMoney(commands.Cog):
             
             if random.random() < 0.05:  # %5 şans
                 reward = 100
+                # random değerini yazacak.
+                logkanali.send(f"{ctx.author} {random} büyük ikramiyeyi kazandı! 100 coin!")
             else:
                 reward = random.randint(15, 60)
             await self.add_coins(user_id, reward)
