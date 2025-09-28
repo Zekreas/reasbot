@@ -4,6 +4,7 @@ import sqlite3
 import aiosqlite
 import asyncio
 from datetime import datetime, timedelta
+from cogs.reascoinshop import check_channel
 
 class xp(commands.Cog):
     def __init__(self, bot):
@@ -166,7 +167,8 @@ class xp(commands.Cog):
             await db.commit()
 
 
-    @commands.command(name="ayliksiralamamesaj")
+    @commands.command(name="ayliksiralamamesaj", aliases=["mesaj", "mesajtop"])
+    @check_channel()
     async def ayliksiralamamesaj(self, ctx):
         """Aylık mesaj sıralamasını gösterir"""
         async with aiosqlite.connect(self.db_path) as db:
