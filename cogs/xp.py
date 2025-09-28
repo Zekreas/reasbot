@@ -152,9 +152,9 @@ class xp(commands.Cog):
         if message.author.bot:
             return
         
-        allowed_channels = [1382742472207368192, 1407256228869967943, 1405203383178235936, 1405902511868608542, 1408874763522277436, 1405902511868608542, 1407345046214148208, 1404373696369524838]
-        if message.channel.id not in allowed_channels:
-            return
+        #allowed_channels = [1382742472207368192, 1407256228869967943, 1405203383178235936, 1405902511868608542, 1408874763522277436, 1405902511868608542, 1407345046214148208, 1404373696369524838]
+        #if message.channel.id not in allowed_channels:
+        #    return
         
         user_id = message.author.id
         
