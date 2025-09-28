@@ -7,7 +7,7 @@ class ProfileCog(commands.Cog):
         self.bot = bot
         self.db_path = "reas.db"  # Veritabanı yolu
 
-    @commands.command(name="profile")
+    @commands.command(name="profil", aliases=["profile"])
     async def profile(self, ctx, member: discord.Member = None):
         """Kullanıcının profilini gösterir."""
         member = member or ctx.author  # Eğer bir kullanıcı belirtilmezse komutu kullanan kişi
