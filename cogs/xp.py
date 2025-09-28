@@ -23,14 +23,18 @@ class xp(commands.Cog):
     def _setup_database(self):
         """Database'i kurar"""
         conn = sqlite3.connect(self.db_path)
+
+
         cursor = conn.cursor()
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY,
                 voicehour INTEGER DEFAULT 0,
-                voicehourmonth INTEGER DEFAULT 0
+                voicehourmonth INTEGER DEFAULT 0,
+                messagecount INTEGER DEFAULT 0
             )
         """)
+
         conn.commit()
         conn.close()
     
@@ -140,7 +144,63 @@ class xp(commands.Cog):
     @send_monthly_leaderboard.before_loop
     async def before_send_monthly_leaderboard(self):
         await self.bot.wait_until_ready()
+    
+    
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+        
+        allowed_channels = [1382742472207368192, 1407256228869967943, 1405203383178235936, 1405902511868608542, 1408874763522277436, 1405902511868608542, 1407345046214148208, 1404373696369524838]
+        if message.channel.id not in allowed_channels:
+            return
+        
+        user_id = message.author.id
+        
+        # Kullanıcı her mesaj gönderdiğinde reas.db'deki messagecount değerini 1 artır. Başka bir şey yapma. cooldown olmayacak. zaten veritabanı bağlantısı yapıldı.
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("""
+                INSERT INTO users (user_id, messagecount) VALUES (?, 1)
+                ON CONFLICT(user_id) DO UPDATE SET messagecount = messagecount + 1
+            """, (user_id,))
+            await db.commit()
 
+
+    @commands.command(name="ayliksiralamamesaj")
+    async def ayliksiralamamesaj(self, ctx):
+        """Aylık mesaj sıralamasını gösterir"""
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("""
+                SELECT user_id, messagecount FROM users 
+                WHERE messagecount > 0
+                ORDER BY messagecount DESC
+                LIMIT 10
+            """) as cursor:
+                top_rows = await cursor.fetchall()
+        
+        if not top_rows:
+            await ctx.send("Henüz aylık mesaj kazanan yok!")
+            return
+        
+        embed = discord.Embed(
+            title="✉️ Aylık Mesaj Sıralaması",
+            color=discord.Color.blue(),
+            description="İşte bu ayın en çok mesaj atan kullanıcıları!"
+        )
+        
+        description = ""
+        for i, (user_id, messagecount) in enumerate(top_rows, 1):
+            user = self.bot.get_user(user_id)
+            name = user.display_name if user else f"Kullanıcı {user_id}"
+            
+            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
+            description += f"{medal} {name}: **{messagecount}** mesaj\n"
+        
+        embed.description = description
+        
+        await ctx.send(embed=embed)
+
+        
 
     @commands.command(name="aylikgondermanuel")
     async def aylikgondermanuel(self, ctx):

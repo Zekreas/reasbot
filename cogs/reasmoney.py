@@ -66,6 +66,9 @@ class ReasMoney(commands.Cog):
             """, (user_id,))
             await db.commit()
     
+    #random test edici
+    
+
     # Günlük ödül komutu
     @commands.command(name="daily")
     @check_channel()
