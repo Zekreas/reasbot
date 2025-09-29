@@ -230,7 +230,7 @@ class xp(commands.Cog):
             
             medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
             description += f"{medal} {name}: **{messagecount}** mesaj\n"
-        description += "\nSenin"
+        description += "\n"
         embed.description = description
 
         user_rank = None
@@ -244,7 +244,7 @@ class xp(commands.Cog):
         if user_rank:
             embed.add_field(
                 name="📍 Senin Sıran",
-                value=f"**{user_rank}.** sıradasın - **{user_hours}** saat",
+                value=f"**{user_rank}.** sıradasın - **{user_hours}** mesaj",
                 inline=False
             )
         else:
