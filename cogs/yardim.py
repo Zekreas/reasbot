@@ -27,7 +27,7 @@ class Yardim(commands.Cog):
         embed.add_field(
             name="💰 Coin Sistemi",
             value=(
-                "`r!daily` - Günlük coin ödülünü al (15-60 coin, %5 şans 100 coin)\n"
+                "`r!daily` - Günlük coin ödülünü al (15-60 arası coin, düşük şansla 100 coin)\n"
                 "`r!coin` - Coin bakiyeni görüntüle\n"
                 "`r!coin @kullanıcı` - Başka kullanıcının bakiyesini gör\n"
                 "`r!top` - Coin sıralamasını görüntüle\n"
@@ -57,8 +57,8 @@ class Yardim(commands.Cog):
             value=(
                 "`r!profil` - Kendi profilini görüntüle\n"
                 "`r!profil @kullanıcı` - Başka kullanıcının profilini gör\n"
-                "`r!voicetop` - Ses kanalı sıralamasını görüntüle\n"
-                "`r!ayliksiralamamesaj` - Aylık mesaj sıralamasını gör"
+                "`r!ses` - Ses kanalı sıralamasını görüntüle\n"
+                "`r!mesaj` - Aylık mesaj sıralamasını gör"
             ),
             inline=False
         )
@@ -68,8 +68,8 @@ class Yardim(commands.Cog):
             name="ℹ️ Önemli Bilgiler",
             value=(
                 "• Coin kazanma yolları:\n"
-                "  - Mesaj atarak (30 saniye cooldown, 1 coin)\n"
-                "  - Ses kanalında durarak (2 dakikada 1 coin, günlük max 160)\n"
+                "  - Mesaj atarak\n"
+                "  - Ses kanalında durarak (günlük max 160 coin)\n"
                 "  - Günlük ödül komutu\n\n"
                 "• Çoğu komut sadece <#1418328370915184730> kanalında çalışır\n"
                 "• Market'ten aldığın renkler envatere eklenir\n"
