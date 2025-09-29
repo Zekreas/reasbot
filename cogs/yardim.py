@@ -13,7 +13,8 @@ class Yardim(commands.Cog):
         self.db_path = "reas.db"
 
     @commands.command(name="yardım", aliases=["yardim", "help_user"])
-    async def yardim(ctx):
+    @check_channel()
+    async def yardim(self, ctx):
         """Üyeler için mevcut komutları gösterir"""
         
         embed = discord.Embed(
