@@ -230,9 +230,30 @@ class xp(commands.Cog):
             
             medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉" if i == 3 else f"{i}."
             description += f"{medal} {name}: **{messagecount}** mesaj\n"
-        
+        description += "\nSenin"
         embed.description = description
+
+        user_rank = None
+        user_hours = None
+        for i, (user_id, messagecount) in enumerate(top_rows, 1):
+            if user_id == ctx.author.id:
+                user_rank = i
+                user_hours = messagecount
+                break
         
+        if user_rank:
+            embed.add_field(
+                name="📍 Senin Sıran",
+                value=f"**{user_rank}.** sıradasın - **{user_hours}** saat",
+                inline=False
+            )
+        else:
+            embed.add_field(
+                name="📍 Senin Sıran",
+                value="Henüz mesajın yok!",
+                inline=False
+            )
+
         await ctx.send(embed=embed)
 
         
