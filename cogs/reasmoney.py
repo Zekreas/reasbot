@@ -15,16 +15,11 @@ class ReasMoney(commands.Cog):
         # Spam koruması için cooldown
         self.message_cooldowns = {}  # {user_id: last_reward_time}
         self.message_cooldown = 30  # saniye
-        
-        # Ses takibi (DB’ye taşındı, burada sadece aktif oturumlar tutuluyor)
-        self.voice_users = {}  # {user_id: join_time}
-        self.max_voice_daily = 160  # günlük maksimum ses coin
+
         
         # Database setup
         self._setup_database()
         
-        # Ses ödülü task'ı
-        self.voice_reward_task.start()
     
     def _setup_database(self):
         """Database tablolarını kurar"""
@@ -121,29 +116,6 @@ class ReasMoney(commands.Cog):
             await ctx.send(random.choice(low_rewards))
         
     
-    @commands.command(name="coinhaklarim" )
-    async def testcoins(self, ctx):
-        user_id = ctx.author.id
-        coins = await self.get_user_coins(user_id)
-
-        async with aiosqlite.connect(self.db_path) as db:
-            async with db.execute(
-                "SELECT voice_daily_date, voice_daily_coins FROM users WHERE user_id = ?", 
-                (user_id,)
-            ) as cursor:
-                row = await cursor.fetchone()
-                daily_date, coins_today = row if row else (None, 0)
-
-        today = date.today().isoformat()
-        if daily_date != today:
-            coins_today = 0
-
-        remaining_voice_coins = max(self.max_voice_daily - coins_today, 0)
-
-        await ctx.send(
-            f"Şu anki coin: {coins}\n"
-            f"Bugünkü ses limiti: {remaining_voice_coins}/{self.max_voice_daily}"
-        )
     # Mesaj ödülü
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -155,7 +127,7 @@ class ReasMoney(commands.Cog):
             return
         
         user_id = message.author.id
-        now = datetime.now()
+        now = datetime.now() + timedelta(hours=3)
         
         if user_id in self.message_cooldowns:
             last_reward = self.message_cooldowns[user_id]
@@ -165,101 +137,7 @@ class ReasMoney(commands.Cog):
         await self.add_coins(user_id, 1)
         self.message_cooldowns[user_id] = now
     
-    # Ses kanalına giriş/çıkış
-    @commands.Cog.listener()
-    async def on_voice_state_update(self, member, before, after):
-        if member.bot:
-            return
-        
-        user_id = member.id
-        now = datetime.now()
-        today = date.today().isoformat()
-        
-        await self.get_or_create_user(user_id)
-        
-        async with aiosqlite.connect(self.db_path) as db:
-            async with db.execute("SELECT voice_daily_date, voice_daily_coins FROM users WHERE user_id = ?", (user_id,)) as cursor:
-                row = await cursor.fetchone()
-                daily_date, coins_today = row if row else (None, 0)
-            
-            if daily_date != today:
-                coins_today = 0
-                await db.execute("UPDATE users SET voice_daily_date = ?, voice_daily_coins = 0 WHERE user_id = ?", (today, user_id))
-                await db.commit()
-        
-        if before.channel is None and after.channel is not None:
-            self.voice_users[user_id] = now
-        elif before.channel is not None and after.channel is None:
-            if user_id in self.voice_users:
-                join_time = self.voice_users[user_id]
-                duration = (now - join_time).total_seconds()
-                minutes = int(duration // 60)
-                
-                if minutes >= 2:
-                    coins = minutes // 2
-                    async with aiosqlite.connect(self.db_path) as db:
-                        async with db.execute("SELECT voice_daily_coins FROM users WHERE user_id = ?", (user_id,)) as cursor:
-                            row = await cursor.fetchone()
-                            coins_today = row[0] if row else 0
-                        coins_to_add = min(coins, self.max_voice_daily - coins_today)
-                        print(f"[VOICE DEBUG] user_id={user_id} coins={coins} coins_today={coins_today} coins_to_add={coins_to_add}")
-                        if coins_to_add > 0:
-                            await self.add_coins(user_id, coins_to_add)
-                            await db.execute("UPDATE users SET voice_daily_coins = voice_daily_coins + ? WHERE user_id = ?", (coins_to_add, user_id))
-                            await db.commit()
-                del self.voice_users[user_id]
-        elif before.channel != after.channel and before.channel is not None and after.channel is not None:
-            if user_id in self.voice_users:
-                join_time = self.voice_users[user_id]
-                duration = (now - join_time).total_seconds()
-                minutes = int(duration // 60)
-                
-                if minutes >= 2:
-                    coins = minutes // 2
-                    async with aiosqlite.connect(self.db_path) as db:
-                        async with db.execute("SELECT voice_daily_coins FROM users WHERE user_id = ?", (user_id,)) as cursor:
-                            row = await cursor.fetchone()
-                            coins_today = row[0] if row else 0
-                        coins_to_add = min(coins, self.max_voice_daily - coins_today)
-                        print(f"[VOICE DEBUG] user_id={user_id} coins={coins} coins_today={coins_today} coins_to_add={coins_to_add}")
-                        if coins_to_add > 0:
-                            await self.add_coins(user_id, coins_to_add)
-                            await db.execute("UPDATE users SET voice_daily_coins = voice_daily_coins + ? WHERE user_id = ?", (coins_to_add, user_id))
-                            await db.commit()
-            self.voice_users[user_id] = now
-    
-    @tasks.loop(minutes=2)
-    async def voice_reward_task(self):
-        if not self.voice_users:
-            return
-        
-        now = datetime.now()
-        today = date.today().isoformat()
-        
-        for user_id, join_time in list(self.voice_users.items()):
-            if (now - join_time).total_seconds() >= 60:
-                await self.get_or_create_user(user_id)
-                async with aiosqlite.connect(self.db_path) as db:
-                    async with db.execute("SELECT voice_daily_date, voice_daily_coins FROM users WHERE user_id = ?", (user_id,)) as cursor:
-                        row = await cursor.fetchone()
-                        daily_date, coins_today = row if row else (None, 0)
-                    
-                    if daily_date != today:
-                        coins_today = 0
-                        await db.execute("UPDATE users SET voice_daily_date = ?, voice_daily_coins = 0 WHERE user_id = ?", (today, user_id))
-                        await db.commit()
-                    
-                    coins_to_add = min(1, self.max_voice_daily - coins_today)
-                    if coins_to_add > 0:
-                        await self.add_coins(user_id, coins_to_add)
-                        await db.execute("UPDATE users SET voice_daily_coins = voice_daily_coins + ? WHERE user_id = ?", (coins_to_add, user_id))
-                        await db.commit()
-                self.voice_users[user_id] = now
-    
-    @voice_reward_task.before_loop
-    async def before_voice_task(self):
-        await self.bot.wait_until_ready()
-    
+
     
     # Leaderboard
     @commands.command(name="top", aliases=["leaderboard", "sıralama"])
@@ -289,7 +167,7 @@ class ReasMoney(commands.Cog):
         await ctx.send(embed=embed)
     
     def cog_unload(self):
-        self.voice_reward_task.cancel()
+        pass  
 
     @commands.command(name="coinduzenle", aliases=["setcoins"])
     @commands.is_owner()

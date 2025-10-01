@@ -16,6 +16,8 @@ class xp(commands.Cog):
         #her gün bu kanala aylık sıralama gönderilecek.
         self.ayliksiralama = 1418538714937954434 #kanal idsi
         # Database setup
+        self.max_voice_daily = 160  # günlük maksimum ses coin
+
         self._setup_database()
         
         # Ses ödülü task'ını başlat
@@ -35,8 +37,9 @@ class xp(commands.Cog):
                 voicehour INTEGER DEFAULT 0,
                 voicehourmonth INTEGER DEFAULT 0,
                 messagecount INTEGER DEFAULT 0,
-                reas_coin INTEGER DEFAULT 0
-
+                reas_coin INTEGER DEFAULT 0,
+                voice_daily_date TEXT,
+                voice_daily_coins INTEGER DEFAULT 0
             )
         """)
 
@@ -52,7 +55,7 @@ class xp(commands.Cog):
             return
 
         user_id = member.id
-        now = datetime.now()
+        now = datetime.now() + timedelta(hours=3)
 
         # Ses kanalına katıldı
         if before.channel is None and after.channel is not None:
@@ -67,29 +70,82 @@ class xp(commands.Cog):
         elif before.channel != after.channel:
             pass
 
-    # Her dakika kontrol: 1 saat dolunca ekle
+
+    @commands.command(name="coinhaklarim")
+    @check_channel()
+    async def coinhaklarim(self, ctx):
+        user_id = ctx.author.id
+        today = datetime.now().date().isoformat()
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute(
+                "SELECT reas_coin, voice_daily_date, voice_daily_coins FROM users WHERE user_id = ?", 
+                (user_id,)
+            ) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    coins, daily_date, coins_today = row
+                else:
+                    coins, daily_date, coins_today = 0, None, 0
+        
+        if daily_date != today:
+            coins_today = 0
+        
+        remaining_voice_coins = max(self.max_voice_daily - coins_today, 0)
+        
+        await ctx.send(
+            f"💰 **Coin Durumun:**\n"
+            f"Toplam coin: **{coins}**\n"
+            f"Bugünkü ses limiti: **{remaining_voice_coins}/{self.max_voice_daily}**"
+        )
+
     @tasks.loop(minutes=1)
     async def voice_hour_task(self):
-        now = datetime.now()
+        now = datetime.now() + timedelta(hours=3)
+        today = datetime.now().date().isoformat()
+        
         async with aiosqlite.connect("reas.db") as db:
             for user_id, join_time in list(self.voice_users.items()):
                 duration = (now - join_time).total_seconds()
                 if duration >= 3600:  # 1 saat
+                    # Her zaman saat sayısını artır
+                    # Bugünkü ses coin'ini kontrol et (sadece coin için)
+                    async with db.execute(
+                        "SELECT voice_daily_date, voice_daily_coins FROM users WHERE user_id = ?", 
+                        (user_id,)
+                    ) as cursor:
+                        row = await cursor.fetchone()
+                        daily_date, coins_today = row if row else (None, 0)
+                    
+                    # Yeni gün ise sıfırla
+                    if daily_date != today:
+                        coins_today = 0
+                    
+                    # Limit kontrolü (sadece coin için)
+                    coins_to_add = min(30, self.max_voice_daily - (coins_today or 0))
+                    
                     await db.execute("""
-                        INSERT INTO users (user_id, voicehour, voicehourmonth)
-                        VALUES (?, 1, 1)
+                        INSERT INTO users (user_id, voicehour, voicehourmonth, reas_coin, voice_daily_date, voice_daily_coins)
+                        VALUES (?, 1, 1, ?, ?, ?)
                         ON CONFLICT(user_id) DO UPDATE
                         SET voicehour = voicehour + 1,
-                            voicehourmonth = voicehourmonth + 1
-                    """, (user_id,))
+                            voicehourmonth = voicehourmonth + 1,
+                            reas_coin = reas_coin + ?,
+                            voice_daily_date = ?,
+                            voice_daily_coins = CASE 
+                                WHEN voice_daily_date = ? THEN voice_daily_coins + ?
+                                ELSE ?
+                            END
+                    """, (user_id, coins_to_add, today, coins_to_add, coins_to_add, today, today, coins_to_add, coins_to_add))
                     await db.commit()
-                    # Yeni sayaç başlasın (art arda saatleri saysın)
+                    
+                    # Yeni sayaç başlasın
                     self.voice_users[user_id] = now
 
     # Her gün kontrol → ayın başıysa aylık sıfırlansın
     @tasks.loop(hours=24)
     async def reset_monthly_hours(self):
-        now = datetime.now()
+        now = datetime.now() + timedelta(hours=3)
         if now.day == 1:  # ayın ilk günü
             async with aiosqlite.connect("reas.db") as db:
                 await db.execute("UPDATE users SET voicehourmonth = 0")
