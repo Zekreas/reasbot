@@ -16,7 +16,7 @@ class xp(commands.Cog):
         #her gün bu kanala aylık sıralama gönderilecek.
         self.ayliksiralama = 1418538714937954434 #kanal idsi
         # Database setup
-        self.max_voice_daily = 160  # günlük maksimum ses coin
+        self.max_voice_daily = 180  # günlük maksimum ses coin
 
         self._setup_database()
         
@@ -98,17 +98,15 @@ class xp(commands.Cog):
             f"Toplam coin: **{coins}**\n"
             f"Bugünkü ses limiti: **{remaining_voice_coins}/{self.max_voice_daily}**"
         )
-
     @tasks.loop(minutes=1)
     async def voice_hour_task(self):
         now = datetime.now() + timedelta(hours=3)
-        today = datetime.now().date().isoformat()
+        today = (datetime.now() + timedelta(hours=3)).date().isoformat()
         
         async with aiosqlite.connect("reas.db") as db:
             for user_id, join_time in list(self.voice_users.items()):
                 duration = (now - join_time).total_seconds()
                 if duration >= 3600:  # 1 saat
-                    # Her zaman saat sayısını artır
                     # Bugünkü ses coin'ini kontrol et (sadece coin için)
                     async with db.execute(
                         "SELECT voice_daily_date, voice_daily_coins FROM users WHERE user_id = ?", 
