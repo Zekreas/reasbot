@@ -20,7 +20,9 @@ class xp(commands.Cog):
         
         # Ses ödülü task'ını başlat
         self.voice_hour_task.start()
+        self.reset_monthly_hours.start()
         self.send_monthly_leaderboard.start()
+
     def _setup_database(self):
         """Database'i kurar"""
         conn = sqlite3.connect(self.db_path)
@@ -32,72 +34,77 @@ class xp(commands.Cog):
                 user_id INTEGER PRIMARY KEY,
                 voicehour INTEGER DEFAULT 0,
                 voicehourmonth INTEGER DEFAULT 0,
-                messagecount INTEGER DEFAULT 0
+                messagecount INTEGER DEFAULT 0,
+                reas_coin INTEGER DEFAULT 0
+
             )
         """)
 
         conn.commit()
         conn.close()
     
-    # Ses kanalı join/leave takibi
+
+
+    # Ses kanalına giriş / çıkış takibi
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if member.bot:
             return
-        
+
         user_id = member.id
         now = datetime.now()
-        
+
         # Ses kanalına katıldı
         if before.channel is None and after.channel is not None:
             self.voice_users[user_id] = now
-        
+
         # Ses kanalından ayrıldı
         elif before.channel is not None and after.channel is None:
             if user_id in self.voice_users:
                 del self.voice_users[user_id]
-        
-        # Kanal değiştirdi (aynı anda hem join hem leave)
-        elif before.channel != after.channel and before.channel is not None and after.channel is not None:
-            # Yeni kanala katılma (zaman sıfırlamaya gerek yok, devam ediyor)
+
+        # Kanal değiştirdi → join_time bozulmasın
+        elif before.channel != after.channel:
             pass
 
+    # Her dakika kontrol: 1 saat dolunca ekle
     @tasks.loop(minutes=1)
     async def voice_hour_task(self):
-        """Her dakika kontrol eder, 1 saat tamamlayanları ödüllendirir"""
-        if not self.voice_users:
-            return
-        
         now = datetime.now()
-        users_to_reward = []
-        
-        for user_id, join_time in self.voice_users.items():
-            # Tam 1 saat (3600 saniye) geçmişse
-            duration = (now - join_time).total_seconds()
-            if duration >= 3600:  # 1 saat = 3600 saniye
-                users_to_reward.append(user_id)
-                # Zamanlayıcıyı 1 saat ileriye al (bir sonraki saat için)
-                self.voice_users[user_id] = now
-        
-        # Ödülleri dağıt
-        for user_id in users_to_reward:
-            async with aiosqlite.connect(self.db_path) as db:
-                await db.execute("""
-                    INSERT INTO users (user_id, voicehour) VALUES (?, 1)
-                    ON CONFLICT(user_id) DO UPDATE SET voicehour = voicehour + 1, voicehourmonth = voicehourmonth + 1
-                """, (user_id,))
-                await db.commit()
-    
-    @tasks.loop(hours=1)
-    async def reset_monthly_task(self):
-        now = datetime.now() + timedelta(hours=3)  # 3 saat ileri al
-        if now.day == 1 and now.hour == 1:  # Ayın ilk günü
-            async with aiosqlite.connect(self.db_path) as db:
+        async with aiosqlite.connect("reas.db") as db:
+            for user_id, join_time in list(self.voice_users.items()):
+                duration = (now - join_time).total_seconds()
+                if duration >= 3600:  # 1 saat
+                    await db.execute("""
+                        INSERT INTO users (user_id, voicehour, voicehourmonth)
+                        VALUES (?, 1, 1)
+                        ON CONFLICT(user_id) DO UPDATE
+                        SET voicehour = voicehour + 1,
+                            voicehourmonth = voicehourmonth + 1
+                    """, (user_id,))
+                    await db.commit()
+                    # Yeni sayaç başlasın (art arda saatleri saysın)
+                    self.voice_users[user_id] = now
+
+    # Her gün kontrol → ayın başıysa aylık sıfırlansın
+    @tasks.loop(hours=24)
+    async def reset_monthly_hours(self):
+        now = datetime.now()
+        if now.day == 1:  # ayın ilk günü
+            async with aiosqlite.connect("reas.db") as db:
                 await db.execute("UPDATE users SET voicehourmonth = 0")
                 await db.commit()
-    @reset_monthly_task.before_loop
-    async def before_reset_monthly_task(self):
+            print("Aylık ses saatleri sıfırlandı!")
+
+    @voice_hour_task.before_loop
+    async def before_voice_hour_task(self):
         await self.bot.wait_until_ready()
+
+    @reset_monthly_hours.before_loop
+    async def before_reset_monthly_hours(self):
+        await self.bot.wait_until_ready()
+
+
 
     @tasks.loop(hours=1)
     async def send_monthly_leaderboard(self):
