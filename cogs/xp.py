@@ -158,10 +158,11 @@ class xp(commands.Cog):
                             voicehourmonth = voicehourmonth + 1,
                             reas_coin = reas_coin + ?,
                             voice_daily_date = ?,
-                            voice_daily_coins = CASE 
-                                WHEN voice_daily_date = ? THEN voice_daily_coins + ?
-                                ELSE ?
-                            END
+                            voice_daily_coins = 
+                                CASE 
+                                    WHEN voice_daily_date = excluded.voice_daily_date THEN voice_daily_coins + ?
+                                    ELSE excluded.voice_daily_coins
+                                END
                     """, (user_id, coins_to_add, today, coins_to_add, coins_to_add, today, today, coins_to_add, coins_to_add))
                     await db.commit()
                     
