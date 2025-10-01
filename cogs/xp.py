@@ -46,7 +46,18 @@ class xp(commands.Cog):
         conn.commit()
         conn.close()
     
-
+    @commands.Cog.listener()
+    async def on_ready(self):
+        """Bot hazır olduğunda zaten ses kanalında olanları tespit et"""
+        await self.bot.wait_until_ready()
+        
+        for guild in self.bot.guilds:
+            for channel in guild.voice_channels:
+                for member in channel.members:
+                    if not member.bot:
+                        self.voice_users[member.id] = datetime.now() + timedelta(hours=3)
+        
+        print(f"[SES] Bot başlatıldı. {len(self.voice_users)} kullanıcı ses kanalında tespit edildi.")
 
     # Ses kanalına giriş / çıkış takibi
     @commands.Cog.listener()
@@ -86,7 +97,7 @@ class xp(commands.Cog):
             voice_list += f"{name} (ID: {uid}): {join_time}\n"
         
         await ctx.send(f"**Aktif ses kullanıcıları ({len(self.voice_users)}):**\n{voice_list}")
-        
+
     @commands.command(name="coinhaklarim")
     @check_channel()
     async def coinhaklarim(self, ctx):
