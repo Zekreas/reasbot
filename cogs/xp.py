@@ -57,6 +57,8 @@ class xp(commands.Cog):
         user_id = member.id
         now = datetime.now() + timedelta(hours=3)
 
+        print(f"[VOICE DEBUG] {member.display_name} ({user_id}) - before: {before.channel}, after: {after.channel}")
+
         # Ses kanalına katıldı
         if before.channel is None and after.channel is not None:
             self.voice_users[user_id] = now
@@ -103,6 +105,7 @@ class xp(commands.Cog):
         now = datetime.now() + timedelta(hours=3)
         today = (datetime.now() + timedelta(hours=3)).date().isoformat()
         
+
         async with aiosqlite.connect("reas.db") as db:
             for user_id, join_time in list(self.voice_users.items()):
                 duration = (now - join_time).total_seconds()
