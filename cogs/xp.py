@@ -72,7 +72,21 @@ class xp(commands.Cog):
         elif before.channel != after.channel:
             pass
 
-
+    @commands.command(name="sesaktif")
+    @commands.is_owner()
+    async def sesaktif(self, ctx):
+        if not self.voice_users:
+            await ctx.send("Aktif ses kullanıcıları: Kimse yok")
+            return
+        
+        voice_list = ""
+        for uid, join_time in self.voice_users.items():
+            user = self.bot.get_user(uid)
+            name = user.display_name if user else f"ID: {uid}"
+            voice_list += f"{name} (ID: {uid}): {join_time}\n"
+        
+        await ctx.send(f"**Aktif ses kullanıcıları ({len(self.voice_users)}):**\n{voice_list}")
+        
     @commands.command(name="coinhaklarim")
     @check_channel()
     async def coinhaklarim(self, ctx):
