@@ -46,19 +46,6 @@ class xp(commands.Cog):
         conn.commit()
         conn.close()
     
-    @commands.Cog.listener()
-    async def on_ready(self):
-        """Bot hazır olduğunda zaten ses kanalında olanları tespit et"""
-        await self.bot.wait_until_ready()
-        
-        for guild in self.bot.guilds:
-            for channel in guild.voice_channels:
-                for member in channel.members:
-                    if not member.bot:
-                        self.voice_users[member.id] = datetime.now() + timedelta(hours=3)
-        
-        print(f"[SES] Bot başlatıldı. {len(self.voice_users)} kullanıcı ses kanalında tespit edildi.")
-
     # Ses kanalına giriş / çıkış takibi
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -125,12 +112,12 @@ class xp(commands.Cog):
             f"Toplam coin: **{coins}**\n"
             f"Bugünkü ses limiti: **{remaining_voice_coins}/{self.max_voice_daily}**"
         )
+        
     @tasks.loop(minutes=1)
     async def voice_hour_task(self):
         now = datetime.now() + timedelta(hours=3)
         today = (datetime.now() + timedelta(hours=3)).date().isoformat()
         
-
         async with aiosqlite.connect("reas.db") as db:
             for user_id, join_time in list(self.voice_users.items()):
                 duration = (now - join_time).total_seconds()
@@ -165,6 +152,26 @@ class xp(commands.Cog):
                                 END
                     """, (user_id, coins_to_add, today, coins_to_add, coins_to_add, today, today, coins_to_add, coins_to_add))
                     await db.commit()
+                    
+                    # BURAYA EKLE - Detaylı log gönder
+                    user = self.bot.get_user(user_id)
+                    username = user.display_name if user else f"ID: {user_id}"
+                    
+                    log_user = await self.bot.fetch_user(467395799697981440)
+                    if log_user:
+                        log_message = (
+                            f"🎤 **SES SAATİ VERİLDİ**\n"
+                            f"👤 Kullanıcı: {username} ({user_id})\n"
+                            f"⏰ Süre: {int(duration/3600)} saat\n"
+                            f"💰 Eklenen Coin: {coins_to_add}\n"
+                            f"📊 Bugünkü Toplam Ses Coin: {coins_today + coins_to_add}/{self.max_voice_daily}\n"
+                            f"📅 Tarih: {today}\n"
+                            f"🕐 Zaman: {now.strftime('%H:%M:%S')}"
+                        )
+                        try:
+                            await log_user.send(log_message)
+                        except:
+                            pass
                     
                     # Yeni sayaç başlasın
                     self.voice_users[user_id] = now
