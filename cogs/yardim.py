@@ -6,23 +6,32 @@ import asyncio
 from datetime import date, datetime, timedelta
 from cogs.reascoinshop import check_channel
 import random
+from discord import app_commands
 
 class Yardim(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.db_path = "reas.db"
 
+    # Klasik komut
     @commands.command(name="yardım", aliases=["yardim", "help_user"])
     @check_channel()
     async def yardim(self, ctx):
-        """Üyeler için mevcut komutları gösterir"""
-        
+        await self._send_help_embed(ctx.send, ctx.guild)
+
+    # Slash komut
+    @app_commands.command(name="yardım", description="Tüm komutları gösterir")
+    async def yardim_slash(self, interaction: discord.Interaction):
+        await self._send_help_embed(interaction.response.send_message, interaction.guild)
+
+    # Ortak embed fonksiyonu
+    async def _send_help_embed(self, send_func, guild):
         embed = discord.Embed(
             title="🤖 Reas Bot - Kullanıcı Komutları",
             description="Merhaba! İşte kullanabileceğin tüm komutlar:",
             color=discord.Color.blue()
         )
-        
+
         # Coin Sistemi
         embed.add_field(
             name="💰 Coin Sistemi",
@@ -35,7 +44,7 @@ class Yardim(commands.Cog):
             ),
             inline=False
         )
-        
+
         # Market Sistemi
         embed.add_field(
             name="🛒 Market Sistemi",
@@ -50,7 +59,7 @@ class Yardim(commands.Cog):
             ),
             inline=False
         )
-        
+
         # Aktivite ve İstatistikler
         embed.add_field(
             name="📊 Aktivite & İstatistikler",
@@ -62,7 +71,7 @@ class Yardim(commands.Cog):
             ),
             inline=False
         )
-        
+
         # Genel Bilgiler
         embed.add_field(
             name="ℹ️ Önemli Bilgiler",
@@ -77,12 +86,13 @@ class Yardim(commands.Cog):
             ),
             inline=False
         )
-        
+
         embed.set_footer(text="Bu komutlar sadece üyeler içindir. Daha fazla bilgi için komutları deneyin!")
-        embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
-        
-        await ctx.send(embed=embed)
+        embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
+
+        await send_func(embed=embed)
 
     
 async def setup(bot):
     await bot.add_cog(Yardim(bot))
+    await bot.tree.sync()
