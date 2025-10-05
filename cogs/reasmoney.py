@@ -6,6 +6,8 @@ import asyncio
 from datetime import date, datetime, timedelta
 from cogs.reascoinshop import check_channel
 import random
+from discord import app_commands
+
 
 class ReasMoney(commands.Cog):
     def __init__(self, bot):
@@ -64,57 +66,40 @@ class ReasMoney(commands.Cog):
     #random test edici
     
 
-    # Günlük ödül komutu
+    # Klasik daily komutu
     @commands.command(name="daily")
-    @check_channel()
     async def daily(self, ctx):
-        user_id = ctx.author.id
-        logkanali = 1384165277419180133
+        await self._daily_reward(ctx.author.id, ctx.send)
+
+    # Slash komutu
+    @app_commands.command(name="daily", description="Günlük ödülünü al")
+    async def daily_slash(self, interaction: discord.Interaction):
+        await self._daily_reward(interaction.user.id, interaction.response.send_message)
+
+    async def _daily_reward(self, user_id, send_func):
         today = date.today().isoformat()
-        
         await self.get_or_create_user(user_id)
-        
+
         async with aiosqlite.connect(self.db_path) as db:
             async with db.execute("SELECT last_daily FROM users WHERE user_id = ?", (user_id,)) as cursor:
                 row = await cursor.fetchone()
                 last_daily = row[0] if row else None
-            
+
             if last_daily == today:
-                await ctx.send("❌ Bugün günlük ödülünü zaten aldın. Yarın tekrar dene!")
+                await send_func("❌ Bugün günlük ödülünü zaten aldın. Yarın tekrar dene!")
                 return
-            
-            
-            if random.random() < 0.05:  # %5 şans
+
+            # Ödül belirleme
+            if random.random() < 0.05:
                 reward = 100
-                # random değerini yazacak.
-                logkanali.send(f"{ctx.author} {random} büyük ikramiyeyi kazandı! 100 coin!")
             else:
                 reward = random.randint(15, 60)
+
             await self.add_coins(user_id, reward)
             await db.execute("UPDATE users SET last_daily = ? WHERE user_id = ?", (today, user_id))
             await db.commit()
-        
-        high_rewards = [
-            f"✅ Günlük ödülünü aldın! 🎉 Bugün şanslı günün! {reward} coin kazandın! 💎",
-            f"✅ Günlük ödülünü aldın! 🔥 Muhteşem! Bugün {reward} coin kazandın!",
-        ]
-        mid_rewards = [
-            f"✅ Günlük ödülünü aldın! ✨ Güzel! {reward} coin kazandın. 💰",
-            f"✅ Günlük ödülünü aldın! Bugün {reward} coin topladın!",
-        ]
-        low_rewards = [
-            f"✅ Günlük ödülünü aldın! Bugünlük {reward} coin... Yarın daha iyi olabilir!",
-        ]
-        
-        if reward == 100:
-            await ctx.send("✅ Günlük ödülünü aldın! 🎉 Büyük ikramiyeyi tutturdun ve 100 coin kazandın!💎")
-        elif reward >= 50:
-            await ctx.send(random.choice(high_rewards))
-        elif reward >= 25:
-            await ctx.send(random.choice(mid_rewards))
-        else:
-            await ctx.send(random.choice(low_rewards))
-        
+
+        await send_func(f"✅ Günlük ödülünü aldın! {reward} coin kazandın!")
     
     # Mesaj ödülü
     @commands.Cog.listener()
@@ -204,3 +189,4 @@ class ReasMoney(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(ReasMoney(bot))
+    await bot.tree.sync()
