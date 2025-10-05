@@ -342,6 +342,8 @@ async def on_ready():
     kisisayisisifirla.start()
     load_data()
     save_data()  # JSON dosyası artık sıfır değerlerle oluşacak
+    await bot.tree.sync()
+    print("Slash komutları senkronize edildi!")
 
 def kanalbulunamadi(ctx):
     return ctx.send("Kanal bulunamadı. Lütfen geçerli bir kanal ID'si girin.")
