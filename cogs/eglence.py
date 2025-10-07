@@ -3,7 +3,9 @@ import discord
 from discord.ext import commands
 from discord.ui import View, Select
 import aiosqlite
+from discord import Option
 import random
+from discord import app_commands
 
 class Eglence(commands.Cog):
     def __init__(self, bot):
@@ -127,3 +129,4 @@ class Eglence(commands.Cog):
         await ctx.send(f"# 🧩 **Anime bilmece:** {correct[1]}", view=view)
 async def setup(bot):
     await bot.add_cog(Eglence(bot))
+    await bot.tree.sync()
