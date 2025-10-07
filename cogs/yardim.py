@@ -103,4 +103,3 @@ class Yardim(commands.Cog):
     
 async def setup(bot):
     await bot.add_cog(Yardim(bot))
-    await bot.tree.sync()

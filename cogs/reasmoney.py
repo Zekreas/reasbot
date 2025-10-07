@@ -212,4 +212,3 @@ class ReasMoney(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(ReasMoney(bot))
-    await bot.tree.sync()
