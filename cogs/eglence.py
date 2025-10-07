@@ -13,5 +13,5 @@ class Eglence(commands.Cog):
         gay_rate = random.randint(0, 100)
         await ctx.send(f"🏳️‍🌈 **{target.display_name}** gaylik oranı: **%{gay_rate}** 🌈")
 
-def setup(bot):
-    bot.add_cog(Eglence(bot))
+async def setup(bot):
+    await bot.add_cog(Eglence(bot))
