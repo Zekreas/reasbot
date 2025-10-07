@@ -90,16 +90,39 @@ class ReasMoney(commands.Cog):
                 return
 
             # Ödül belirleme
-            if random.random() < 0.05:
-                reward = 100
+            if random.random() < 0.01:
+                reward = 150
             else:
-                reward = random.randint(15, 60)
+                reward = random.randint(25, 80)
 
             await self.add_coins(user_id, reward)
             await db.execute("UPDATE users SET last_daily = ? WHERE user_id = ?", (today, user_id))
             await db.commit()
 
-        await send_func(f"✅ Günlük ödülünü aldın! {reward} coin kazandın!")
+        buyuk_ikramiye = [
+            f"🎉 Vay canına! Bugün büyük ikramiyeyi kazandın! {reward} coin kazandın! 💎",
+        ]
+        high_rewards = [
+            f"✅ Günlük ödülünü aldın! 🎉 Bugün şanslı günün! {reward} coin kazandın! 💎",
+            f"✅ Günlük ödülünü aldın! 🔥 Muhteşem! Bugün {reward} coin kazandın!",
+        ]
+        mid_rewards = [
+            f"✅ Günlük ödülünü aldın! ✨ Güzel! {reward} coin kazandın. 💰",
+            f"✅ Günlük ödülünü aldın! Bugün {reward} coin topladın!",
+        ]
+        low_rewards = [
+            f"✅ Günlük ödülünü aldın! Bugünlük {reward} coin... Yarın daha iyi olabilir!",
+        ]
+        if reward == 150:
+            message = random.choice(buyuk_ikramiye)
+        elif reward >= 65:
+            message = random.choice(high_rewards)
+        elif reward >= 40:
+            message = random.choice(mid_rewards)
+        else:
+            message = random.choice(low_rewards)
+        
+        await send_func(message)
     
     # Mesaj ödülü
     @commands.Cog.listener()
