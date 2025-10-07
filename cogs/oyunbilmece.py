@@ -46,7 +46,7 @@ class GameGuess(commands.Cog):
         return text
     
     def calculate_similarity(self, str1, str2):
-        """İki string arasındaki benzerlik oranını hesapla - DAHA HASSAS"""
+        """İki string arasındaki benzerlik oranını hesapla"""
         str1_norm = self.normalize_text(str1)
         str2_norm = self.normalize_text(str2)
         
@@ -60,10 +60,10 @@ class GameGuess(commands.Cog):
         
         # Uzunluk farkı çok büyükse düşük skor
         len_ratio = min(len(str1_no_space), len(str2_no_space)) / max(len(str1_no_space), len(str2_no_space))
-        if len_ratio < 0.6:  # %60'dan az benzerlik varsa
-            return len_ratio * 50  # Düşük skor döndür
+        if len_ratio < 0.6:
+            return len_ratio * 50
         
-        # Levenshtein benzeri karakter karşılaştırması
+        # Karakter karşılaştırması
         matches = 0
         max_len = max(len(str1_no_space), len(str2_no_space))
         
@@ -76,10 +76,26 @@ class GameGuess(commands.Cog):
         # SequenceMatcher ile genel benzerlik
         sequence_score = SequenceMatcher(None, str1_no_space, str2_no_space).ratio() * 100
         
-        # İki skoru birleştir (pozisyon daha önemli)
+        # İki skoru birleştir
         final_score = (position_score * 0.6) + (sequence_score * 0.4)
             
         return final_score
+    
+    def check_answer(self, user_answer, correct_game, alt_names):
+        """Cevabın doğru olup olmadığını kontrol et"""
+        # Ana isimle karşılaştır
+        similarity = self.calculate_similarity(user_answer, correct_game)
+        if similarity >= 80:
+            return True
+        
+        # Alternatif isimlerle karşılaştır
+        if alt_names:
+            for alt_name in alt_names.split(','):
+                alt_similarity = self.calculate_similarity(user_answer, alt_name.strip())
+                if alt_similarity >= 80:
+                    return True
+        
+        return False
     
     def get_hint(self, game_name, attempt):
         """Deneme sayısına göre ipucu ver"""
@@ -95,18 +111,6 @@ class GameGuess(commands.Cog):
             else:
                 return f"🔤 İpucu: **{letter_count}** harfli tek kelime"
         return None
-        """Cevabın doğru olup olmadığını kontrol et"""
-        # Ana isimle karşılaştır
-        if self.calculate_similarity(user_answer, correct_game) >= 85:
-            return True
-        
-        # Alternatif isimlerle karşılaştır
-        if alt_names:
-            for alt_name in alt_names.split(','):
-                if self.calculate_similarity(user_answer, alt_name.strip()) >= 85:
-                    return True
-        
-        return False
     
     def get_random_game(self):
         """Database'den rastgele oyun çek"""
@@ -247,7 +251,8 @@ class GameGuess(commands.Cog):
                     color=discord.Color.red()
                 )
                 await ctx.send(embed=embed)
-                del self.active_games[ctx.author.id]
+                if ctx.author.id in self.active_games:
+                    del self.active_games[ctx.author.id]
                 break
     
     @commands.command(name='oyuniptal', aliases=['cancelgame'])
