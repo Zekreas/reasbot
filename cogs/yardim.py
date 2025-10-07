@@ -72,6 +72,14 @@ class Yardim(commands.Cog):
             inline=False
         )
 
+        embed.add_field(
+            name="🎉 Eğlence Komutları",
+            value=(
+                "`r!gaytesti @kullanıcı` - Etiketlenen kişiye gay testi yapar"
+            ),
+            inline=False
+        )
+
         # Genel Bilgiler
         embed.add_field(
             name="ℹ️ Önemli Bilgiler",
