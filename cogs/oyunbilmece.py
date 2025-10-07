@@ -20,6 +20,7 @@ class GameGuess(commands.Cog):
             name TEXT NOT NULL,
             genre TEXT NOT NULL,
             release_year INTEGER NOT NULL,
+            platform TEXT NOT NULL,
             metascore INTEGER NOT NULL,
             alt_names TEXT
         )''')
@@ -49,28 +50,59 @@ class GameGuess(commands.Cog):
         str1_norm = self.normalize_text(str1)
         str2_norm = self.normalize_text(str2)
         
+        # Çok kısa cevapları reddet (3 karakterden az)
+        if len(str1_norm.replace(' ', '')) < 3:
+            return 0
+        
         # Tam eşleşme
         if str1_norm == str2_norm:
             return 100
         
-        # Birisi diğerini içeriyor mu?
-        if str1_norm in str2_norm or str2_norm in str1_norm:
-            return 85
+        # Boşluksuz versiyonları karşılaştır
+        str1_no_space = str1_norm.replace(' ', '')
+        str2_no_space = str2_norm.replace(' ', '')
         
-        # SequenceMatcher ile benzerlik
-        ratio = SequenceMatcher(None, str1_norm, str2_norm).ratio()
-        return ratio * 100
+        if str1_no_space == str2_no_space:
+            return 100
+        
+        # Çok büyük uzunluk farkı varsa düşük benzerlik ver
+        len_diff = abs(len(str1_no_space) - len(str2_no_space))
+        if len_diff > len(str2_no_space) * 0.5:  # %50'den fazla fark varsa
+            return 0
+        
+        # SequenceMatcher ile benzerlik (minimum %85 olmalı)
+        ratio = SequenceMatcher(None, str1_no_space, str2_no_space).ratio()
+        similarity = ratio * 100
+        
+        # %85'in altındaysa reddet
+        if similarity < 85:
+            return 0
+            
+        return similarity
     
-    def check_answer(self, user_answer, correct_game, alt_names):
+    def get_hint(self, game_name, attempt):
+        """Deneme sayısına göre ipucu ver"""
+        if attempt == 2:
+            # 2. denemede: İlk harf
+            return f"🔤 İpucu: İlk harf **{game_name[0].upper()}**"
+        elif attempt == 3:
+            # 3. denemede: Kelime sayısı ve harf sayısı
+            word_count = len(game_name.split())
+            letter_count = len(game_name.replace(' ', ''))
+            if word_count > 1:
+                return f"🔤 İpucu: **{word_count}** kelime, toplam **{letter_count}** harf"
+            else:
+                return f"🔤 İpucu: **{letter_count}** harfli tek kelime"
+        return None
         """Cevabın doğru olup olmadığını kontrol et"""
         # Ana isimle karşılaştır
-        if self.calculate_similarity(user_answer, correct_game) >= 75:
+        if self.calculate_similarity(user_answer, correct_game) >= 85:
             return True
         
         # Alternatif isimlerle karşılaştır
         if alt_names:
             for alt_name in alt_names.split(','):
-                if self.calculate_similarity(user_answer, alt_name.strip()) >= 75:
+                if self.calculate_similarity(user_answer, alt_name.strip()) >= 85:
                     return True
         
         return False
@@ -79,7 +111,7 @@ class GameGuess(commands.Cog):
         """Database'den rastgele oyun çek"""
         conn = sqlite3.connect('reas.db')
         c = conn.cursor()
-        c.execute('SELECT name, genre, release_year, metascore, alt_names FROM games ORDER BY RANDOM() LIMIT 1')
+        c.execute('SELECT name, genre, release_year, platform, metascore, alt_names FROM games ORDER BY RANDOM() LIMIT 1')
         result = c.fetchone()
         conn.close()
         
@@ -88,8 +120,9 @@ class GameGuess(commands.Cog):
                 'name': result[0],
                 'genre': result[1],
                 'release_year': result[2],
-                'metascore': result[3],
-                'alt_names': result[4]
+                'platform': result[3],
+                'metascore': result[4],
+                'alt_names': result[5]
             }
         return None
     
@@ -123,8 +156,9 @@ class GameGuess(commands.Cog):
         )
         embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
         embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
+        embed.add_field(name="🖥️ Platform", value=game['platform'], inline=True)
         embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
-        embed.add_field(name="❤️ Hak", value="4/4", inline=False)
+        embed.add_field(name="❤️ Hak", value="4/4", inline=True)
         embed.set_footer(text="Oyun ismini yazarak cevapla! (4 hakkın var)")
         
         await ctx.send(embed=embed)
@@ -154,6 +188,7 @@ class GameGuess(commands.Cog):
                     )
                     embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
                     embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
+                    embed.add_field(name="🖥️ Platform", value=game['platform'], inline=True)
                     embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
                     embed.add_field(name="🎉 Deneme", value=f"{attempts}/4", inline=True)
                     
