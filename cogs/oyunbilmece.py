@@ -19,6 +19,7 @@ class GameGuess(commands.Cog):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             genre TEXT NOT NULL,
+            release_year INTEGER NOT NULL,
             metascore INTEGER NOT NULL,
             alt_names TEXT
         )''')
@@ -76,9 +77,9 @@ class GameGuess(commands.Cog):
     
     def get_random_game(self):
         """Database'den rastgele oyun çek"""
-        conn = sqlite3.connect('bot_database.db')
+        conn = sqlite3.connect('reas.db')
         c = conn.cursor()
-        c.execute('SELECT name, genre, metascore, alt_names FROM games ORDER BY RANDOM() LIMIT 1')
+        c.execute('SELECT name, genre, release_year, metascore, alt_names FROM games ORDER BY RANDOM() LIMIT 1')
         result = c.fetchone()
         conn.close()
         
@@ -86,8 +87,9 @@ class GameGuess(commands.Cog):
             return {
                 'name': result[0],
                 'genre': result[1],
-                'metascore': result[2],
-                'alt_names': result[3]
+                'release_year': result[2],
+                'metascore': result[3],
+                'alt_names': result[4]
             }
         return None
     
@@ -120,8 +122,9 @@ class GameGuess(commands.Cog):
             color=discord.Color.blue()
         )
         embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
+        embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
         embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
-        embed.add_field(name="❤️ Hak", value="4/4", inline=True)
+        embed.add_field(name="❤️ Hak", value="4/4", inline=False)
         embed.set_footer(text="Oyun ismini yazarak cevapla! (4 hakkın var)")
         
         await ctx.send(embed=embed)
@@ -150,6 +153,7 @@ class GameGuess(commands.Cog):
                         color=discord.Color.green()
                     )
                     embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
+                    embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
                     embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
                     embed.add_field(name="🎉 Deneme", value=f"{attempts}/4", inline=True)
                     
@@ -165,6 +169,7 @@ class GameGuess(commands.Cog):
                             color=discord.Color.orange()
                         )
                         embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
+                        embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
                         embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
                         embed.set_footer(text="Tekrar dene!")
                         await ctx.send(embed=embed)
@@ -176,6 +181,7 @@ class GameGuess(commands.Cog):
                             color=discord.Color.red()
                         )
                         embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
+                        embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
                         embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
                         
                         await ctx.send(embed=embed)
