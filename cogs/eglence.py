@@ -61,7 +61,7 @@ class Eglence(commands.Cog):
 
             for entry in entries:
                 try:
-                    name, emojis = entry.split(" ", 1)
+                    name, emojis = entry.rsplit(" ", 1)
                 except ValueError:
                     await ctx.send(f"❌ Hatalı format: `{entry}` — boşlukla ayrılmış olmalı.")
                     continue
