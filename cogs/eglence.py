@@ -23,14 +23,14 @@ class Eglence(commands.Cog):
 
             chance = random.random()  # 0.0 - 1.0 arası sayı
             if chance < 0.65:
-                gay_rate = random.randint(85, 100)
+                gay_rate = random.randint(70, 100)
             elif chance < 0.90:
                 gay_rate = random.randint(0, 40)
             else:
                 gay_rate = random.randint(50, 80)
 
             result_text = f"🏳️‍🌈 **{target.display_name} adlı kullanıcının gay oranı: %{gay_rate}** 🌈"
-            
+
             await ctx.send(result_text)
 
 async def setup(bot):
