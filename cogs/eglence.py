@@ -8,7 +8,8 @@ import random
 class Eglence(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
+        self.db_path = "reas.db"
+        
     @commands.command(name="gaytesti")
     async def gaytest(self, ctx, member: discord.Member = None):
             """Etiketlenen kişi (ya da yazan kişi) için eğlencelik gay testi yapar."""
