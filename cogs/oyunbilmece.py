@@ -164,14 +164,15 @@ class GameGuess(commands.Cog):
         embed.add_field(name="🖥️ Platform", value=game['platform'], inline=True)
         embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
         embed.add_field(name="❤️ Hak", value="4/4", inline=True)
-        embed.set_footer(text="Oyun ismini yazarak cevapla! (4 hakkın var)")
+        embed.set_footer(text="Cevabı '!' ile başlatarak yaz! Örnek: !minecraft")
         
-        await ctx.send(embed=embed)
+        await ctx.send(f"{ctx.author.mention}", embed=embed)
         
         # Cevap bekleme fonksiyonu
         def check(m):
             return (m.author == ctx.author and 
                     m.channel == ctx.channel and 
+                    m.content.startswith('!') and
                     not m.content.startswith('r!') and
                     ctx.author.id in self.active_games)
         
@@ -185,7 +186,8 @@ class GameGuess(commands.Cog):
                 if ctx.author.id not in self.active_games:
                     break
                 
-                user_answer = msg.content
+                # ! işaretini kaldır
+                user_answer = msg.content[1:].strip()
                 attempts = self.active_games[ctx.author.id]['attempts'] + 1
                 self.active_games[ctx.author.id]['attempts'] = attempts
                 remaining = 4 - attempts
@@ -195,7 +197,7 @@ class GameGuess(commands.Cog):
                     # DOĞRU CEVAP
                     embed = discord.Embed(
                         title="✅ Doğru Bildin!",
-                        description=f"**{game['name']}** oyununu {attempts} denemede buldun!",
+                        description=f"{ctx.author.mention} **{game['name']}** oyununu {attempts} denemede buldun!",
                         color=discord.Color.green()
                     )
                     embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
@@ -212,7 +214,7 @@ class GameGuess(commands.Cog):
                     if remaining > 0:
                         embed = discord.Embed(
                             title="❌ Yanlış Cevap",
-                            description=f"Kalan hak: **{remaining}**",
+                            description=f"{ctx.author.mention} Kalan hak: **{remaining}**",
                             color=discord.Color.orange()
                         )
                         embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
@@ -225,13 +227,13 @@ class GameGuess(commands.Cog):
                         if hint:
                             embed.add_field(name="💡 İpucu", value=hint, inline=False)
                         
-                        embed.set_footer(text="Tekrar dene!")
+                        embed.set_footer(text="Tekrar dene! Cevabı '!' ile başlat")
                         await ctx.send(embed=embed)
                     else:
                         # HAKLAR BİTTİ
                         embed = discord.Embed(
                             title="💀 Kaybettin!",
-                            description=f"Doğru cevap: **{game['name']}**",
+                            description=f"{ctx.author.mention} Doğru cevap: **{game['name']}**",
                             color=discord.Color.red()
                         )
                         embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
@@ -247,7 +249,7 @@ class GameGuess(commands.Cog):
                 # ZAMAN AŞIMI
                 embed = discord.Embed(
                     title="⏰ Süre Doldu!",
-                    description=f"Doğru cevap: **{game['name']}**",
+                    description=f"{ctx.author.mention} Doğru cevap: **{game['name']}**",
                     color=discord.Color.red()
                 )
                 await ctx.send(embed=embed)
