@@ -201,10 +201,10 @@ class GameGuess(commands.Cog):
                         color=discord.Color.green()
                     )
                     embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
-                    embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
-                    embed.add_field(name="🖥️ Platform", value=game['platform'], inline=True)
-                    embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
-                    embed.add_field(name="🎉 Deneme", value=f"{attempts}/4", inline=True)
+                    embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=False)
+                    embed.add_field(name="🖥️ Platform", value=game['platform'], inline=False)
+                    embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=False)
+                    embed.add_field(name="🎉 Deneme", value=f"{attempts}/4", inline=False)
                     
                     await ctx.send(embed=embed)
                     del self.active_games[ctx.author.id]
@@ -217,10 +217,10 @@ class GameGuess(commands.Cog):
                             description=f"{ctx.author.mention} Kalan hak: **{remaining}**",
                             color=discord.Color.orange()
                         )
-                        embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
-                        embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
-                        embed.add_field(name="🖥️ Platform", value=game['platform'], inline=True)
-                        embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
+                        embed.add_field(name="🎯 Tür", value=game['genre'], inline=False)
+                        embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=False)
+                        embed.add_field(name="🖥️ Platform", value=game['platform'], inline=False)
+                        embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=False)
                         
                         # İpucu ekle
                         hint = self.get_hint(game['name'], attempts)
@@ -236,10 +236,10 @@ class GameGuess(commands.Cog):
                             description=f"{ctx.author.mention} Doğru cevap: **{game['name']}**",
                             color=discord.Color.red()
                         )
-                        embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
-                        embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
-                        embed.add_field(name="🖥️ Platform", value=game['platform'], inline=True)
-                        embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
+                        embed.add_field(name="🎯 Tür", value=game['genre'], inline=False)
+                        embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=False)
+                        embed.add_field(name="🖥️ Platform", value=game['platform'], inline=False)
+                        embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=False)
                         
                         await ctx.send(embed=embed)
                         del self.active_games[ctx.author.id]
