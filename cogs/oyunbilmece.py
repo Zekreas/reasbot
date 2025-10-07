@@ -46,39 +46,40 @@ class GameGuess(commands.Cog):
         return text
     
     def calculate_similarity(self, str1, str2):
-        """İki string arasındaki benzerlik oranını hesapla"""
+        """İki string arasındaki benzerlik oranını hesapla - DAHA HASSAS"""
         str1_norm = self.normalize_text(str1)
         str2_norm = self.normalize_text(str2)
         
-        # Çok kısa cevapları reddet (3 karakterden az)
-        if len(str1_norm.replace(' ', '')) < 3:
-            return 0
-        
-        # Tam eşleşme
-        if str1_norm == str2_norm:
-            return 100
-        
-        # Boşluksuz versiyonları karşılaştır
+        # Boşluksuz versiyonları al
         str1_no_space = str1_norm.replace(' ', '')
         str2_no_space = str2_norm.replace(' ', '')
         
+        # Tam eşleşme kontrolü
         if str1_no_space == str2_no_space:
             return 100
         
-        # Çok büyük uzunluk farkı varsa düşük benzerlik ver
-        len_diff = abs(len(str1_no_space) - len(str2_no_space))
-        if len_diff > len(str2_no_space) * 0.5:  # %50'den fazla fark varsa
-            return 0
+        # Uzunluk farkı çok büyükse düşük skor
+        len_ratio = min(len(str1_no_space), len(str2_no_space)) / max(len(str1_no_space), len(str2_no_space))
+        if len_ratio < 0.6:  # %60'dan az benzerlik varsa
+            return len_ratio * 50  # Düşük skor döndür
         
-        # SequenceMatcher ile benzerlik (minimum %85 olmalı)
-        ratio = SequenceMatcher(None, str1_no_space, str2_no_space).ratio()
-        similarity = ratio * 100
+        # Levenshtein benzeri karakter karşılaştırması
+        matches = 0
+        max_len = max(len(str1_no_space), len(str2_no_space))
         
-        # %85'in altındaysa reddet
-        if similarity < 85:
-            return 0
+        for i in range(min(len(str1_no_space), len(str2_no_space))):
+            if str1_no_space[i] == str2_no_space[i]:
+                matches += 1
+        
+        position_score = (matches / max_len) * 100
+        
+        # SequenceMatcher ile genel benzerlik
+        sequence_score = SequenceMatcher(None, str1_no_space, str2_no_space).ratio() * 100
+        
+        # İki skoru birleştir (pozisyon daha önemli)
+        final_score = (position_score * 0.6) + (sequence_score * 0.4)
             
-        return similarity
+        return final_score
     
     def get_hint(self, game_name, attempt):
         """Deneme sayısına göre ipucu ver"""
