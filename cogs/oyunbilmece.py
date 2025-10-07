@@ -159,10 +159,10 @@ class GameGuess(commands.Cog):
             description="Aşağıdaki bilgilere göre oyunu tahmin et!",
             color=discord.Color.blue()
         )
-        embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
-        embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
-        embed.add_field(name="🖥️ Platform", value=game['platform'], inline=True)
-        embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
+        embed.add_field(name="🎯 Tür", value=game['genre'], inline=False)
+        embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=False)
+        embed.add_field(name="🖥️ Platform", value=game['platform'], inline=False)
+        embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=False)
         embed.add_field(name="❤️ Hak", value="4/4", inline=True)
         embed.set_footer(text="Cevabı '!' ile başlatarak yaz! Örnek: !minecraft")
         
@@ -200,7 +200,7 @@ class GameGuess(commands.Cog):
                         description=f"{ctx.author.mention} **{game['name']}** oyununu {attempts} denemede buldun!",
                         color=discord.Color.green()
                     )
-                    embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
+                    embed.add_field(name="🎯 Tür", value=game['genre'], inline=False)
                     embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=False)
                     embed.add_field(name="🖥️ Platform", value=game['platform'], inline=False)
                     embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=False)
