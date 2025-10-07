@@ -3,7 +3,6 @@ import discord
 from discord.ext import commands
 from discord.ui import View, Select
 import aiosqlite
-from discord import Option
 import random
 from discord import app_commands
 
