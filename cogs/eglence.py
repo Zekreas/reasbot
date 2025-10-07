@@ -22,7 +22,7 @@ class Eglence(commands.Cog):
             await loading_msg.delete()
 
             chance = random.random()  # 0.0 - 1.0 arası sayı
-            if chance < 0.65:
+            if chance < 0.60:
                 gay_rate = random.randint(70, 100)
             elif chance < 0.90:
                 gay_rate = random.randint(0, 40)
