@@ -540,6 +540,12 @@ def get_rastgele_karakter():
         'image_url': karakter['images']['jpg']['image_url']
     }
 
+@bot.command()
+@commands.is_owner()
+async def sync(ctx):
+    await bot.tree.sync()
+    await ctx.send("✅ Slash komutlar senkronize edildi!")
+    
 def get_rastgele_anime():
     url = "https://api.jikan.moe/v4/random/anime"
     

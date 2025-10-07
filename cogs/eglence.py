@@ -118,7 +118,6 @@ class Eglence(commands.Cog):
             await interaction.followup.send(f"# 🧩 **Anime bilmece:** {correct[1]}")
 
 
-    # ⚡ Autocomplete fonksiyonu
     @animebilmece.autocomplete('anime')
     async def anime_autocomplete(self, interaction: discord.Interaction, current: str):
         async with aiosqlite.connect(self.db_path) as db:
