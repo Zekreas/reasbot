@@ -11,6 +11,7 @@ class Eglence(commands.Cog):
         self.bot = bot
         self.db_path = "reas.db"
 
+
     @commands.command(name="gaytesti")
     async def gaytest(self, ctx, member: discord.Member = None):
             """Etiketlenen kişi (ya da yazan kişi) için eğlencelik gay testi yapar."""
@@ -90,7 +91,7 @@ class Eglence(commands.Cog):
 
 
     # ⚡ Anime bilmece slash komutu
-    @discord.slash_command(description="Emoji ipuçlarından animeyi tahmin et!")
+    @app_commands.command(name="animebilmece", description="Emoji ipuçlarından animeyi tahmin et!")
     async def animebilmece(self, ctx: discord.ApplicationContext, anime: Option(str, "Tahmin ettiğin anime", autocomplete=True)):
         await ctx.defer()  # cevap gecikirse yükleme göster
 
@@ -111,8 +112,8 @@ class Eglence(commands.Cog):
 
 
     # ⚡ Autocomplete fonksiyonu
-    @animebilmece.autocomplete("anime")
-    async def anime_autocomplete(self, ctx: discord.AutocompleteContext):
+    @animebilmece.autocomplete('anime')
+    async def anime_autocomplete(self, interaction: discord.Interaction, current: str):
         async with aiosqlite.connect(self.db_path) as db:
             async with db.execute("SELECT name FROM anime_quiz") as cursor:
                 all_animes = await cursor.fetchall()
