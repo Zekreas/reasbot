@@ -165,13 +165,20 @@ class GameGuess(commands.Cog):
         
         # Cevap bekleme fonksiyonu
         def check(m):
-            return m.author == ctx.author and m.channel == ctx.channel
+            return (m.author == ctx.author and 
+                    m.channel == ctx.channel and 
+                    not m.content.startswith('r!') and
+                    ctx.author.id in self.active_games)
         
         # Oyun döngüsü
-        while self.active_games[ctx.author.id]['attempts'] < 4:
+        while ctx.author.id in self.active_games and self.active_games[ctx.author.id]['attempts'] < 4:
             try:
                 # Kullanıcının cevabını bekle (60 saniye timeout)
                 msg = await self.bot.wait_for('message', timeout=60.0, check=check)
+                
+                # Oyun silinmiş mi kontrol et (iptal komutu için)
+                if ctx.author.id not in self.active_games:
+                    break
                 
                 user_answer = msg.content
                 attempts = self.active_games[ctx.author.id]['attempts'] + 1
@@ -205,7 +212,14 @@ class GameGuess(commands.Cog):
                         )
                         embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
                         embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
+                        embed.add_field(name="🖥️ Platform", value=game['platform'], inline=True)
                         embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
+                        
+                        # İpucu ekle
+                        hint = self.get_hint(game['name'], attempts)
+                        if hint:
+                            embed.add_field(name="💡 İpucu", value=hint, inline=False)
+                        
                         embed.set_footer(text="Tekrar dene!")
                         await ctx.send(embed=embed)
                     else:
@@ -217,6 +231,7 @@ class GameGuess(commands.Cog):
                         )
                         embed.add_field(name="🎯 Tür", value=game['genre'], inline=True)
                         embed.add_field(name="📅 Çıkış Yılı", value=game['release_year'], inline=True)
+                        embed.add_field(name="🖥️ Platform", value=game['platform'], inline=True)
                         embed.add_field(name="⭐ Metascore", value=f"{game['metascore']}/100", inline=True)
                         
                         await ctx.send(embed=embed)
