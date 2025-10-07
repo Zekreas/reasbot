@@ -89,26 +89,33 @@ class Eglence(commands.Cog):
 
         await ctx.send("\n".join(msg) if msg else "⚠️ Hiçbir anime eklenmedi.")
 
-
     # ⚡ Anime bilmece slash komutu
     @app_commands.command(name="animebilmece", description="Emoji ipuçlarından animeyi tahmin et!")
-    async def animebilmece(self, ctx: discord.ApplicationContext, anime: Option(str, "Tahmin ettiğin anime", autocomplete=True)):
-        await ctx.defer()  # cevap gecikirse yükleme göster
+    async def animebilmece(self, interaction: discord.Interaction, anime: str = None):
+        await interaction.response.defer()  # cevap gecikirse yükleme göster
 
         async with aiosqlite.connect(self.db_path) as db:
             async with db.execute("SELECT name, emojis FROM anime_quiz") as cursor:
                 rows = await cursor.fetchall()
 
         if not rows:
-            await ctx.respond("❌ Hiç anime bulunamadı!")
+            await interaction.followup.send("❌ Hiç anime bulunamadı!")
             return
 
-        # Kullanıcının seçtiği animeyi bul
-        selected = next((r for r in rows if r[0] == anime), None)
-        if selected:
-            await ctx.respond(f"🧩 **Seçtiğin anime:** {selected[0]} {selected[1]}")
+        # Eğer anime seçilmişse göster
+        if anime:
+            selected = next((r for r in rows if r[0] == anime), None)
+            if selected:
+                await interaction.followup.send(f"🧩 **Seçtiğin anime:** {selected[0]} {selected[1]}")
+            else:
+                await interaction.followup.send("❌ Anime bulunamadı!")
         else:
-            await ctx.respond("❌ Anime bulunamadı!")
+            # Rastgele bir anime seç
+            import random
+            correct = random.choice(rows)
+            
+            # Buton view oluştur (eğer yoksa basit yanıt ver)
+            await interaction.followup.send(f"# 🧩 **Anime bilmece:** {correct[1]}")
 
 
     # ⚡ Autocomplete fonksiyonu
@@ -119,14 +126,12 @@ class Eglence(commands.Cog):
                 all_animes = await cursor.fetchall()
 
         # Kullanıcı yazdığına göre filtrele
-        query = ctx.value.lower() if ctx.value else ""
+        query = current.lower() if current else ""
         choices = [a[0] for a in all_animes if query in a[0].lower()]
 
-        # En fazla 25 seçenek dönebilir
-        return choices[:25]
+        # En fazla 25 seçenek dönebilir (discord.app_commands.Choice nesnesi olarak)
+        return [app_commands.Choice(name=choice, value=choice) for choice in choices[:25]]
 
 
-        await ctx.send(f"# 🧩 **Anime bilmece:** {correct[1]}", view=view)
 async def setup(bot):
     await bot.add_cog(Eglence(bot))
-    await bot.tree.sync()
