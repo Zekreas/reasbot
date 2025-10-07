@@ -9,7 +9,7 @@ class Eglence(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.db_path = "reas.db"
-        
+
     @commands.command(name="gaytesti")
     async def gaytest(self, ctx, member: discord.Member = None):
             """Etiketlenen kişi (ya da yazan kişi) için eğlencelik gay testi yapar."""
@@ -87,51 +87,43 @@ class Eglence(commands.Cog):
 
         await ctx.send("\n".join(msg) if msg else "⚠️ Hiçbir anime eklenmedi.")
 
-    # 🎮 Anime bilmece oyunu
-    @commands.command(name="animebilmece")
-    async def animebilmece(self, ctx):
-        """Emoji ipuçlarından animeyi tahmin et!"""
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute("""
-                CREATE TABLE IF NOT EXISTS anime_quiz (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL UNIQUE,
-                    emojis TEXT NOT NULL
-                )
-            """)
-            await db.commit()
 
+    # ⚡ Anime bilmece slash komutu
+    @discord.slash_command(description="Emoji ipuçlarından animeyi tahmin et!")
+    async def animebilmece(self, ctx: discord.ApplicationContext, anime: Option(str, "Tahmin ettiğin anime", autocomplete=True)):
+        await ctx.defer()  # cevap gecikirse yükleme göster
+
+        async with aiosqlite.connect(self.db_path) as db:
             async with db.execute("SELECT name, emojis FROM anime_quiz") as cursor:
                 rows = await cursor.fetchall()
 
-        if len(rows) < 4:
-            await ctx.send("❌ En az 4 anime bulunmalı!")
+        if not rows:
+            await ctx.respond("❌ Hiç anime bulunamadı!")
             return
 
-        correct = random.choice(rows)
-        options = random.sample(rows, 4)
-        if correct not in options:
-            options[random.randint(0, 3)] = correct
+        # Kullanıcının seçtiği animeyi bul
+        selected = next((r for r in rows if r[0] == anime), None)
+        if selected:
+            await ctx.respond(f"🧩 **Seçtiğin anime:** {selected[0]} {selected[1]}")
+        else:
+            await ctx.respond("❌ Anime bulunamadı!")
 
-        select = Select(
-            placeholder="Hangi anime olabilir?",
-            options=[discord.SelectOption(label=a[0]) for a in options]
-        )
 
-        async def select_callback(interaction: discord.Interaction):
-            if interaction.user != ctx.author:
-                await interaction.response.send_message("Bu bilmece sana ait değil!", ephemeral=True)
-                return
+    # ⚡ Autocomplete fonksiyonu
+    @animebilmece.autocomplete("anime")
+    async def anime_autocomplete(self, ctx: discord.AutocompleteContext):
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("SELECT name FROM anime_quiz") as cursor:
+                all_animes = await cursor.fetchall()
 
-            if select.values[0] == correct[0]:
-                await interaction.response.send_message(f"✅ **Doğru!** {correct[0]} 🎉", ephemeral=True)
-            else:
-                await interaction.response.send_message(f"❌ Yanlış! Doğru cevap: **{correct[0]}**", ephemeral=True)
+        # Kullanıcı yazdığına göre filtrele
+        query = ctx.value.lower() if ctx.value else ""
+        choices = [a[0] for a in all_animes if query in a[0].lower()]
 
-        select.callback = select_callback
-        view = View()
-        view.add_item(select)
+        # En fazla 25 seçenek dönebilir
+        return choices[:25]
 
-        await ctx.send(f"🧩 **Anime bilmece:** {correct[1]}", view=view)
+
+        await ctx.send(f"# 🧩 **Anime bilmece:** {correct[1]}", view=view)
 async def setup(bot):
     await bot.add_cog(Eglence(bot))
