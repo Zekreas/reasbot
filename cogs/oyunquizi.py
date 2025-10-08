@@ -3,7 +3,6 @@ from discord.ext import commands
 from discord import app_commands
 import aiosqlite
 import random
-from datetime import datetime, timedelta
 
 class Quiz(commands.Cog):
     def __init__(self, bot):
@@ -22,14 +21,6 @@ class Quiz(commands.Cog):
                     option_c TEXT NOT NULL,
                     option_d TEXT NOT NULL,
                     correct_answer TEXT NOT NULL
-                )
-            """)
-            
-            await db.execute("""
-                CREATE TABLE IF NOT EXISTS quiz_users (
-                    id TEXT PRIMARY KEY,
-                    daily_correct INTEGER DEFAULT 0,
-                    last_reset TEXT
                 )
             """)
             
@@ -65,50 +56,20 @@ class Quiz(commands.Cog):
             
             question_id, question, opt_a, opt_b, opt_c, opt_d, correct = question_data
             
-            cursor = await db.execute(
-                "SELECT daily_correct, last_reset FROM quiz_users WHERE id = ?",
-                (user_id,)
-            )
-            result = await cursor.fetchone()
-            
-            today = datetime.now().strftime("%Y-%m-%d")
-            
-            if result is None:
-                await db.execute(
-                    "INSERT INTO quiz_users (id, daily_correct, last_reset) VALUES (?, ?, ?)",
-                    (user_id, 0, today)
-                )
-                await db.commit()
-                daily_correct = 0
-            else:
-                daily_correct, last_reset = result
-                if last_reset != today:
-                    await db.execute(
-                        "UPDATE quiz_users SET daily_correct = 0, last_reset = ? WHERE id = ?",
-                        (today, user_id)
-                    )
-                    await db.commit()
-                    daily_correct = 0
-            
-            remaining_coins = max(0, 3 - daily_correct)
-            
             embed = discord.Embed(
                 title="🎮 Oyun Sorusu",
                 description=f"{question}\n\n**A**)  {opt_a}\n**B**)  {opt_b}\n**C**)  {opt_c}\n**D**)  {opt_d}",
                 color=discord.Color.blue()
             )
-            embed.set_footer(text=f"Bugün kazanabileceğin coin sayısı: {remaining_coins}")
             
-            view = QuizView(user_id, correct, self.db_path, daily_correct)
+            view = QuizView(user_id, correct)
             await interaction.response.send_message(embed=embed, view=view)
 
 class QuizView(discord.ui.View):
-    def __init__(self, user_id, correct_answer, db_path, daily_correct):
+    def __init__(self, user_id, correct_answer):
         super().__init__(timeout=60)
         self.user_id = user_id
         self.correct_answer = correct_answer
-        self.db_path = db_path
-        self.daily_correct = daily_correct
         self.answered = False
     
     async def handle_answer(self, interaction: discord.Interaction, answer: str):
@@ -122,27 +83,13 @@ class QuizView(discord.ui.View):
         
         self.answered = True
         
+        if answer == self.correct_answer:
+            await interaction.response.send_message("✅ Doğru cevap!", ephemeral=True)
+        else:
+            await interaction.response.send_message(f"❌ Yanlış cevap! Doğru cevap: {self.correct_answer}", ephemeral=True)
+        
         for item in self.children:
             item.disabled = True
-        
-        async with aiosqlite.connect(self.db_path) as db:
-            if answer == self.correct_answer:
-                if self.daily_correct < 3:
-                    await db.execute(
-                        "UPDATE users SET reas_coin = reas_coin + 5 WHERE id = ?",
-                        (self.user_id,)
-                    )
-                    await db.execute(
-                        "UPDATE quiz_users SET daily_correct = daily_correct + 1 WHERE id = ?",
-                        (self.user_id,)
-                    )
-                    await db.commit()
-                    await interaction.response.send_message("✅ Doğru cevap! 5 Reas Coin kazandın!", ephemeral=True)
-                else:
-                    await interaction.response.send_message("✅ Doğru cevap! Ancak bugünlük coin limitine ulaştın.", ephemeral=True)
-            else:
-                await interaction.response.send_message(f"❌ Yanlış cevap! Doğru cevap: {self.correct_answer}", ephemeral=True)
-        
         await interaction.message.edit(view=self)
         self.stop()
     
