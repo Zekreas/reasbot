@@ -71,33 +71,24 @@ class Quiz(commands.Cog):
                 remaining = result[0]
             
             if remaining <= 0:
-                await interaction.response.send_message("❌ Soru hakkın kalmadı!", ephemeral=True)
+                await interaction.response.send_message("Soru hakkın kalmadı!", ephemeral=True)
                 return
             
             cursor = await db.execute("SELECT * FROM quiz_questions ORDER BY RANDOM() LIMIT 1")
             question_data = await cursor.fetchone()
             
             if question_data is None:
-                await interaction.response.send_message("❌ Şu anda soru bulunmuyor!", ephemeral=True)
+                await interaction.response.send_message("Şu anda soru bulunmuyor!", ephemeral=True)
                 return
             
             question_id, question, opt_a, opt_b, opt_c, opt_d, correct = question_data
             
             embed = discord.Embed(
-                title="🎮 Oyun Bilgi Yarışması",
-                description=f"**{question}**\n\n",
-                color=0x5865F2
+                title="🎮 Oyun Sorusu",
+                description=f"{question}\n\n🅰️ {opt_a}\n🅱️ {opt_b}\n🅲 {opt_c}\n🅳 {opt_d}",
+                color=discord.Color.blue()
             )
-            embed.add_field(
-                name="",
-                value=f"🅰️ {opt_a}\n\n🅱️ {opt_b}\n\n🅲 {opt_c}\n\n🅳 {opt_d}",
-                inline=False
-            )
-            embed.set_footer(
-                text=f"Kalan Soru Hakkı: {remaining}/3 • Doğru cevap: +5 Reas Coin",
-                icon_url=interaction.user.display_avatar.url
-            )
-            embed.set_thumbnail(url="https://cdn.discordapp.com/emojis/1234567890.png")
+            embed.set_footer(text=f"Kalan soru hakkı: {remaining}")
             
             view = QuizView(user_id, correct, self.db_path)
             await interaction.response.send_message(embed=embed, view=view)
@@ -112,11 +103,11 @@ class QuizView(discord.ui.View):
     
     async def handle_answer(self, interaction: discord.Interaction, answer: str):
         if self.answered:
-            await interaction.response.send_message("⚠️ Bu soruya zaten cevap verildi!", ephemeral=True)
+            await interaction.response.send_message("Bu soruya zaten cevap verildi!", ephemeral=True)
             return
         
         if str(interaction.user.id) != self.user_id:
-            await interaction.response.send_message("⚠️ Bu soru senin için değil!", ephemeral=True)
+            await interaction.response.send_message("Bu soru senin için değil!", ephemeral=True)
             return
         
         self.answered = True
@@ -127,56 +118,35 @@ class QuizView(discord.ui.View):
                 (self.user_id,)
             )
             
-            cursor = await db.execute(
-                "SELECT remaining_questions FROM quiz_users WHERE id = ?",
-                (self.user_id,)
-            )
-            result = await cursor.fetchone()
-            remaining = result[0] if result else 0
-            
             if answer == self.correct_answer:
                 await db.execute(
                     "UPDATE users SET reas_coin = reas_coin + 5 WHERE id = ?",
                     (self.user_id,)
                 )
                 await db.commit()
-                
-                embed = discord.Embed(
-                    title="✅ Doğru Cevap!",
-                    description=f"Tebrikler! **5 Reas Coin** kazandın! 🎉",
-                    color=0x57F287
-                )
-                embed.set_footer(text=f"Kalan Soru Hakkı: {remaining}/3")
-                await interaction.response.send_message(embed=embed, ephemeral=True)
+                await interaction.response.send_message("✅ Doğru cevap! 5 Reas Coin kazandın!", ephemeral=True)
             else:
                 await db.commit()
-                
-                embed = discord.Embed(
-                    title="❌ Yanlış Cevap!",
-                    description=f"Doğru cevap: **{self.correct_answer}** şıkkıydı.",
-                    color=0xED4245
-                )
-                embed.set_footer(text=f"Kalan Soru Hakkı: {remaining}/3")
-                await interaction.response.send_message(embed=embed, ephemeral=True)
+                await interaction.response.send_message(f"❌ Yanlış cevap! Doğru cevap: {self.correct_answer}", ephemeral=True)
         
         for item in self.children:
             item.disabled = True
         await interaction.message.edit(view=self)
         self.stop()
     
-    @discord.ui.button(label="A", style=discord.ButtonStyle.secondary, emoji="🅰️")
+    @discord.ui.button(label="A", style=discord.ButtonStyle.primary, row=0)
     async def button_a(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_answer(interaction, "A")
     
-    @discord.ui.button(label="B", style=discord.ButtonStyle.secondary, emoji="🅱️")
+    @discord.ui.button(label="B", style=discord.ButtonStyle.primary, row=0)
     async def button_b(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_answer(interaction, "B")
     
-    @discord.ui.button(label="C", style=discord.ButtonStyle.secondary, emoji="🅲")
+    @discord.ui.button(label="C", style=discord.ButtonStyle.primary, row=1)
     async def button_c(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_answer(interaction, "C")
     
-    @discord.ui.button(label="D", style=discord.ButtonStyle.secondary, emoji="🅳")
+    @discord.ui.button(label="D", style=discord.ButtonStyle.primary, row=1)
     async def button_d(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_answer(interaction, "D")
 
