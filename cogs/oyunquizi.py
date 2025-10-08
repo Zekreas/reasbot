@@ -85,7 +85,7 @@ class Quiz(commands.Cog):
             
             embed = discord.Embed(
                 title="🎮 Oyun Sorusu",
-                description=f"{question}\n\n)  {opt_a}\n)  {opt_b}\n)  {opt_c}\n)  {opt_d}",
+                description=f"{question}\n\n**A**)  {opt_a}\n**B**)  {opt_b}\n**C**)  {opt_c}\n**D**)  {opt_d}",
                 color=discord.Color.blue()
             )
             embed.set_footer(text=f"Kalan soru hakkı: {remaining}")
