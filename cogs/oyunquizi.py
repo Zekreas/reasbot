@@ -85,7 +85,7 @@ class Quiz(commands.Cog):
             
             embed = discord.Embed(
                 title="🎮 Oyun Sorusu",
-                description=f"{question}\n\n🅰️ {opt_a}\n🅱️ {opt_b}\n🅲 {opt_c}\n🅳 {opt_d}",
+                description=f"{question}\n\n)  {opt_a}\n)  {opt_b}\n)  {opt_c}\n)  {opt_d}",
                 color=discord.Color.blue()
             )
             embed.set_footer(text=f"Kalan soru hakkı: {remaining}")
@@ -142,11 +142,11 @@ class QuizView(discord.ui.View):
     async def button_b(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_answer(interaction, "B")
     
-    @discord.ui.button(label="C", style=discord.ButtonStyle.primary, row=1)
+    @discord.ui.button(label="C", style=discord.ButtonStyle.primary, row=0)
     async def button_c(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_answer(interaction, "C")
     
-    @discord.ui.button(label="D", style=discord.ButtonStyle.primary, row=1)
+    @discord.ui.button(label="D", style=discord.ButtonStyle.primary, row=0)
     async def button_d(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_answer(interaction, "D")
 
