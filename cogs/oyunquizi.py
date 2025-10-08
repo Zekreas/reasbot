@@ -51,7 +51,7 @@ class Quiz(commands.Cog):
             question_data = await cursor.fetchone()
             
             if question_data is None:
-                await interaction.response.send_message("Şu anda soru bulunmuyor!", ephemeral=True)
+                await interaction.response.send_message("Şu anda soru bulunmuyor!", ephemeral=False)
                 return
             
             question_id, question, opt_a, opt_b, opt_c, opt_d, correct = question_data
@@ -84,9 +84,9 @@ class QuizView(discord.ui.View):
         self.answered = True
         
         if answer == self.correct_answer:
-            await interaction.response.send_message("✅ Doğru cevap!", ephemeral=True)
+            await interaction.response.send_message("✅ Doğru cevap!", ephemeral=False)
         else:
-            await interaction.response.send_message(f"❌ Yanlış cevap! Doğru cevap: {self.correct_answer}", ephemeral=True)
+            await interaction.response.send_message(f"❌ Yanlış cevap! Doğru cevap: {self.correct_answer}", ephemeral=False)
         
         for item in self.children:
             item.disabled = True
