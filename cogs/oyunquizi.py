@@ -84,7 +84,7 @@ class QuizView(discord.ui.View):
         self.answered = True
         
         if answer == self.correct_answer:
-            await interaction.response.send_message("✅ Doğru cevap!, {interaction.user.mention}",ephemeral=False)
+            await interaction.response.send_message(f"✅ Doğru cevap, {interaction.user.mention}!", ephemeral=False)
         else:
             await interaction.response.send_message(f"❌ Yanlış cevap! Doğru cevap: {self.correct_answer}, {interaction.user.mention}", ephemeral=False)
         
