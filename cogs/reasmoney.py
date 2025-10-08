@@ -4,7 +4,7 @@ from discord import app_commands
 import random
 import asyncio
 from typing import Optional, Dict, List
-import requests
+import aiohttp
 
 class WordleGame:
     def __init__(self, word: str, player_id: int):
@@ -116,15 +116,22 @@ class Wordle(commands.Cog):
     async def check_turkish_word(self, word: str) -> bool:
         """TDK API ile kelimenin Türkçe olup olmadığını kontrol et."""
         try:
-            url = f"https://sozluk.gov.tr/gts?ara={word.lower()}"
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                data = response.json()
-                return isinstance(data, list) and len(data) > 0
+            async with aiohttp.ClientSession() as session:
+                url = f"https://sozluk.gov.tr/gts?ara={word.lower()}"
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=3)) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        # Eğer liste dönüyorsa ve içinde eleman varsa kelime geçerli
+                        if isinstance(data, list) and len(data) > 0:
+                            return True
+                        # Eğer dict dönüyorsa ve error yoksa geçerli
+                        if isinstance(data, dict) and 'error' not in data:
+                            return True
+                    return False
+        except Exception as e:
+            print(f"TDK API Hatası: {e}")
+            # API hata verirse oyun durmasın
             return False
-        except:
-            # API hata verirse, oyun durmasın diye True döndür
-            return True
     
     @app_commands.command(name="wordle", description="Wordle oyununu başlat")
     async def wordle_start(self, interaction: discord.Interaction):
