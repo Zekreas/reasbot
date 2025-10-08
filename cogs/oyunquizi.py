@@ -88,10 +88,10 @@ class Quiz(commands.Cog):
                 description=question,
                 color=discord.Color.blue()
             )
-            embed.add_field(name="A", value=opt_a, inline=False)
-            embed.add_field(name="B", value=opt_b, inline=False)
-            embed.add_field(name="C", value=opt_c, inline=False)
-            embed.add_field(name="D", value=opt_d, inline=False)
+            embed.add_field(name="A", value=opt_a, inline=True)
+            embed.add_field(name="B", value=opt_b, inline=True)
+            embed.add_field(name="C", value=opt_c, inline=True)
+            embed.add_field(name="D", value=opt_d, inline=True)
             embed.set_footer(text=f"Kalan soru hakkı: {remaining}")
             
             view = QuizView(user_id, correct, self.db_path)
