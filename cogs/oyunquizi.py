@@ -43,7 +43,7 @@ class Quiz(commands.Cog):
                 ))
             
             await db.commit()
-    @app_commands.command(name="soru", description="Oyun hakkında soru iste")
+    @app_commands.command(name="oyunquizi", description="Oyun hakkında soru iste")
     async def quiz(self, interaction: discord.Interaction):
         user_id = str(interaction.user.id)
         
