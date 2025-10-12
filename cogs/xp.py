@@ -73,7 +73,7 @@ class xp(commands.Cog):
     @commands.command(name="sunucukisisayisi")
     @commands.is_owner()
     async def sunucunufus(self, ctx):
-        guild = self.bot.get_guild(1382742472207368192)  # Sunucu ID'si
+        guild = self.bot.get_guild(1381343269845205132)  # Sunucu ID'si
         if guild is None:
             await ctx.send("Sunucu bulunamadı.")
             return
