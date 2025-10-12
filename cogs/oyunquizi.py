@@ -4,6 +4,8 @@ from discord import app_commands
 import aiosqlite
 import random
 
+from cogs.reascoinshop import check_channel
+
 class Quiz(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -43,6 +45,7 @@ class Quiz(commands.Cog):
                 ))
             
             await db.commit()
+    @check_channel()
     @app_commands.command(name="oyunquizi", description="Oyun hakkında soru iste")
     async def quiz(self, interaction: discord.Interaction):
         user_id = str(interaction.user.id)

@@ -5,13 +5,14 @@ from discord.ui import View, Select
 import aiosqlite
 import random
 from discord import app_commands
+from cogs.reascoinshop import check_channel
 
 class Eglence(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.db_path = "reas.db"
 
-
+    @check_channel()
     @commands.command(name="gaytesti")
     async def gaytest(self, ctx, member: discord.Member = None):
             """Etiketlenen kişi (ya da yazan kişi) için eğlencelik gay testi yapar."""
