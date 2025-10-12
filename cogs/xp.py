@@ -70,6 +70,19 @@ class xp(commands.Cog):
         elif before.channel != after.channel:
             pass
 
+    @commands.command(name="sunucukisisayisi")
+    @commands.is_owner()
+    async def sunucunufus(self, ctx):
+        guild = self.bot.get_guild(1382742472207368192)  # Sunucu ID'si
+        if guild is None:
+            await ctx.send("Sunucu bulunamadı.")
+            return
+        
+        total_members = guild.member_count
+        online_members = sum(1 for member in guild.members if member.status != discord.Status.offline and not member.bot)
+        
+        await ctx.send(f"Sunucudaki toplam üye sayısı: **{total_members}**\nÇevrimiçi üye sayısı: **{online_members}**"ş)
+
     @commands.command(name="sesaktif")
     @commands.is_owner()
     async def sesaktif(self, ctx):
