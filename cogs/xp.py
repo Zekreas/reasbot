@@ -81,7 +81,7 @@ class xp(commands.Cog):
         total_members = guild.member_count
         online_members = sum(1 for member in guild.members if member.status != discord.Status.offline and not member.bot)
         
-        await ctx.send(f"Sunucudaki toplam üye sayısı: **{total_members}**\nÇevrimiçi üye sayısı: **{online_members}**"ş)
+        await ctx.send(f"Sunucudaki toplam üye sayısı: **{total_members}**\nÇevrimiçi üye sayısı: **{online_members}**")
 
     @commands.command(name="sesaktif")
     @commands.is_owner()
