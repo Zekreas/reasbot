@@ -5,6 +5,8 @@ import random
 import asyncio
 from difflib import SequenceMatcher
 
+from cogs.reascoinshop import check_channel
+
 class GameGuess(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -131,6 +133,7 @@ class GameGuess(commands.Cog):
             }
         return None
     
+    @check_channel()
     @commands.command(name='oyuntahmin', aliases=['gameguess', 'gt'])
     async def game_guess(self, ctx):
         """Oyun tahmin oyunu başlat"""

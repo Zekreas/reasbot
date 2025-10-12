@@ -45,7 +45,6 @@ class Quiz(commands.Cog):
                 ))
             
             await db.commit()
-    @check_channel()
     @app_commands.command(name="oyunquizi", description="Oyun hakkında soru iste")
     async def quiz(self, interaction: discord.Interaction):
         user_id = str(interaction.user.id)
