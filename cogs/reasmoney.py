@@ -145,7 +145,6 @@ class ReasMoney(commands.Cog):
         await self.add_coins(user_id, 1)
         self.message_cooldowns[user_id] = now
     
-
     
     # Leaderboard
     @commands.command(name="top", aliases=["leaderboard", "sıralama"])
