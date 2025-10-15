@@ -52,10 +52,19 @@ class xp(commands.Cog):
         if member.bot:
             return
 
+        
+        guild = member.guild
+        afk_channel = guild.afk_channel  # AFK kanalı (None olabilir)
         user_id = member.id
         now = datetime.now() + timedelta(hours=3)
 
         print(f"[VOICE DEBUG] {member.display_name} ({user_id}) - before: {before.channel}, after: {after.channel}")
+
+        # Eğer AFK kanalına giriyorsa veya oradaysa, işlemi yok say
+        if (after.channel and afk_channel and after.channel.id == afk_channel.id) or \
+        (before.channel and afk_channel and before.channel.id == afk_channel.id):
+            print(f"[VOICE DEBUG] {member.display_name} AFK kanalında, işlem yok.")
+            return
 
         # Ses kanalına katıldı
         if before.channel is None and after.channel is not None:

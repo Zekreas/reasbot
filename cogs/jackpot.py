@@ -132,7 +132,7 @@ class Jackpot(commands.Cog):
         # Coin düş
         await self.add_coins(user_id, -amount)
         self.jackpot_pot += amount
-        await ctx.send(f"🎟️ {ctx.author.display_name} jackpot'a **{amount} coin** ile katıldı! (Toplam pot: **{self.jackpot_pot} coin**)")
+        await ctx.send(f"**🎟️ {ctx.author.display_name} jackpot'a {amount} coin ile katıldı! r!jackpotdurum yazarak bakabilirsin! (Toplam pot: {self.jackpot_pot} coin**)")
 
         # Jackpot başlat
         if not self.jackpot_task_running:
