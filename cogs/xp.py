@@ -54,29 +54,39 @@ class xp(commands.Cog):
 
         
         guild = member.guild
-        afk_channel = guild.afk_channel  # AFK kanalı (None olabilir)
+        afk_channel = guild.afk_channel
         user_id = member.id
         now = datetime.now() + timedelta(hours=3)
 
         print(f"[VOICE DEBUG] {member.display_name} ({user_id}) - before: {before.channel}, after: {after.channel}")
 
-        # Eğer AFK kanalına giriyorsa veya oradaysa, işlemi yok say
-        if (after.channel and afk_channel and after.channel.id == afk_channel.id) or \
-        (before.channel and afk_channel and before.channel.id == afk_channel.id):
-            print(f"[VOICE DEBUG] {member.display_name} AFK kanalında, işlem yok.")
+        # AFK kanalına girdiyse
+        if after.channel and afk_channel and after.channel.id == afk_channel.id:
+            if user_id in self.voice_users:
+                del self.voice_users[user_id]
+                print(f"[VOICE DEBUG] {member.display_name} AFK kanalına geçti, listeden silindi.")
             return
 
-        # Ses kanalına katıldı
+        # AFK kanalından çıktıysa (önceden AFK'daydı, şimdi değil)
+        if before.channel and afk_channel and before.channel.id == afk_channel.id:
+            self.voice_users[user_id] = now
+            print(f"[VOICE DEBUG] {member.display_name} AFK kanalından çıktı, tekrar eklendi.")
+            return
+
+        # Normal bir ses kanalına yeni girdi
         if before.channel is None and after.channel is not None:
             self.voice_users[user_id] = now
+            print(f"[VOICE DEBUG] {member.display_name} ses kanalına girdi, zaman kaydedildi.")
 
-        # Ses kanalından ayrıldı
+        # Ses kanalından tamamen ayrıldı
         elif before.channel is not None and after.channel is None:
             if user_id in self.voice_users:
                 del self.voice_users[user_id]
+                print(f"[VOICE DEBUG] {member.display_name} ses kanalından ayrıldı, listeden silindi.")
 
-        # Kanal değiştirdi → join_time bozulmasın
+        # Kanal değiştirdi ama AFK olayı yok → hiçbir şey yapma
         elif before.channel != after.channel:
+            print(f"[VOICE DEBUG] {member.display_name} kanal değiştirdi (normal), işlem yok.")
             pass
 
     @commands.command(name="sunucukisisayisi")
