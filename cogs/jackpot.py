@@ -87,7 +87,7 @@ class Jackpot(commands.Cog):
         await asyncio.sleep(30 * 60)  # 30 dakika bekle
         await self.finish_jackpot()
 
-    @commands.command(name="jackpot", help="Jackpot oyununa katıl! (Maks 25 coin, saatte 1 kez)")
+    @commands.command(name="jackpot", help="Jackpot oyununa katıl! (Toplam 25 coin sınırı)")
     async def join_jackpot(self, ctx, amount: int):
         now = datetime.now()
 
@@ -97,11 +97,12 @@ class Jackpot(commands.Cog):
             await ctx.send(f"❌ Jackpot şu anda kapalı. {dakika} dakika sonra tekrar açılacak.")
             return
 
-        if amount < 1:
-            await ctx.send("❌ Minimum 1 coin ile katılabilirsin.")
+        if amount <= 0:
+            await ctx.send("❌ En az 1 coin yatırabilirsin.")
             return
+
         if amount > 25:
-            await ctx.send("❌ Maksimum 25 coin ile katılabilirsin.")
+            await ctx.send("❌ Tek seferde en fazla 25 coin yatırabilirsin.")
             return
 
         user_id = ctx.author.id
@@ -110,29 +111,30 @@ class Jackpot(commands.Cog):
             await ctx.send("❌ Yeterli coin'in yok.")
             return
 
-        # Kullanıcının 1 saat cooldown kontrolü
         async with aiosqlite.connect(self.db_path) as db:
-            async with db.execute("SELECT last_join_time FROM jackpot WHERE user_id = ?", (user_id,)) as cursor:
+            # Kullanıcının toplam yatırdığı miktarı al
+            async with db.execute("SELECT amount FROM jackpot WHERE user_id = ?", (user_id,)) as cursor:
                 row = await cursor.fetchone()
-            if row:
-                last_time = datetime.fromisoformat(row[0])
-                if last_time > now - timedelta(hours=1):
-                    kalan = (last_time + timedelta(hours=1)) - now
-                    dakika = int(kalan.total_seconds() // 60)
-                    await ctx.send(f"⏳ Jackpot'a tekrar katılabilmek için **{dakika} dakika** beklemelisin.")
-                    return
+                mevcut_miktar = row[0] if row else 0
 
-            # Katılımı kaydet
+            yeni_toplam = mevcut_miktar + amount
+            if yeni_toplam > 25:
+                kalan = 25 - mevcut_miktar
+                await ctx.send(f"❌ Toplamda en fazla 25 coin yatırabilirsin. Şu anda {mevcut_miktar} yatırmışsın, en fazla **{kalan}** coin daha ekleyebilirsin.")
+                return
+
+            # Katılımı kaydet veya güncelle
             await db.execute("""
-                INSERT OR REPLACE INTO jackpot (user_id, amount, last_join_time)
+                INSERT INTO jackpot (user_id, amount, last_join_time)
                 VALUES (?, ?, ?)
-            """, (user_id, amount, now.isoformat()))
+                ON CONFLICT(user_id) DO UPDATE SET amount = amount + ?
+            """, (user_id, amount, now.isoformat(), amount))
             await db.commit()
 
         # Coin düş
         await self.add_coins(user_id, -amount)
         self.jackpot_pot += amount
-        await ctx.send(f"**🎟️ {ctx.author.display_name} jackpot'a {amount} coin ile katıldı! r!jackpotdurum yazarak bakabilirsin! (Toplam pot: {self.jackpot_pot} coin**)")
+        await ctx.send(f"🎟️ {ctx.author.display_name} jackpot'a {amount} coin ekledi! (Toplam yatırımı: {yeni_toplam}/25 | Pot: {self.jackpot_pot} coin)")
 
         # Jackpot başlat
         if not self.jackpot_task_running:
