@@ -75,6 +75,114 @@ class Quiz(commands.Cog):
             view = QuizView(user_id, correct, self)
             self.active_users[user_id] = view  # <--- kullanıcıyı aktif sorulara ekle
             await interaction.response.send_message(embed=embed, view=view)
+    
+
+    @app_commands.command(name="oyunekle", description="Veritabanına yeni oyun ekle (Sadece Moderatörler)")
+    @app_commands.describe(
+        name="Oyun adı",
+        genre="Oyun türü",
+        metascore="Metascore puanı",
+        alt_names="Alternatif isimler (opsiyonel)",
+        release_year="Çıkış yılı (opsiyonel)",
+        platform="Platform (opsiyonel)"
+    )
+    async def oyunekle(
+        self, 
+        interaction: discord.Interaction, 
+        name: str, 
+        genre: str, 
+        metascore: int,
+        alt_names: str = None,
+        release_year: int = None,
+        platform: str = None
+    ):
+        # Moderatör kontrolü
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("❌ Bu komutu kullanmak için moderatör yetkisine sahip olmalısın!", ephemeral=True)
+            return
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("""
+                INSERT INTO games (name, genre, metascore, alt_names, release_year, platform)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (name, genre, metascore, alt_names, release_year, platform))
+            await db.commit()
+        
+        embed = discord.Embed(
+            title="✅ Oyun Eklendi",
+            description=f"**{name}** başarıyla veritabanına eklendi!",
+            color=discord.Color.green()
+        )
+        embed.add_field(name="Tür", value=genre, inline=True)
+        embed.add_field(name="Metascore", value=str(metascore), inline=True)
+        if release_year:
+            embed.add_field(name="Çıkış Yılı", value=str(release_year), inline=True)
+        if platform:
+            embed.add_field(name="Platform", value=platform, inline=True)
+        if alt_names:
+            embed.add_field(name="Alternatif İsimler", value=alt_names, inline=False)
+        
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="oyunliste", description="Veritabanındaki oyunları listele (Sadece Moderatörler)")
+    async def oyunliste(self, interaction: discord.Interaction):
+        # Moderatör kontrolü
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("❌ Bu komutu kullanmak için moderatör yetkisine sahip olmalısın!", ephemeral=True)
+            return
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("SELECT id, name, genre, metascore FROM games LIMIT 25")
+            games = await cursor.fetchall()
+        
+        if not games:
+            await interaction.response.send_message("📋 Veritabanında henüz oyun bulunmuyor!", ephemeral=True)
+            return
+        
+        embed = discord.Embed(
+            title="🎮 Oyun Listesi",
+            description="Veritabanındaki oyunlar (Maksimum 25)",
+            color=discord.Color.blue()
+        )
+        
+        for game_id, name, genre, metascore in games:
+            embed.add_field(
+                name=f"ID: {game_id} - {name}",
+                value=f"Tür: {genre} | Metascore: {metascore}",
+                inline=False
+            )
+        
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="oyunsil", description="ID'sine göre oyun sil (Sadece Moderatörler)")
+    @app_commands.describe(game_id="Silinecek oyunun ID'si")
+    async def oyunsil(self, interaction: discord.Interaction, game_id: int):
+        # Moderatör kontrolü
+        if not interaction.user.guild_permissions.manage_messages:
+            await interaction.response.send_message("❌ Bu komutu kullanmak için moderatör yetkisine sahip olmalısın!", ephemeral=True)
+            return
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            # Önce oyunun var olup olmadığını kontrol et
+            cursor = await db.execute("SELECT name FROM games WHERE id = ?", (game_id,))
+            game = await cursor.fetchone()
+            
+            if game is None:
+                await interaction.response.send_message(f"❌ ID {game_id} ile eşleşen oyun bulunamadı!", ephemeral=True)
+                return
+            
+            # Oyunu sil
+            await db.execute("DELETE FROM games WHERE id = ?", (game_id,))
+            await db.commit()
+        
+        embed = discord.Embed(
+            title="🗑️ Oyun Silindi",
+            description=f"**{game[0]}** (ID: {game_id}) veritabanından silindi!",
+            color=discord.Color.red()
+        )
+        
+        await interaction.response.send_message(embed=embed)
+
 
 
 class QuizView(discord.ui.View):
