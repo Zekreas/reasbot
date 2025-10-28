@@ -125,23 +125,45 @@ class Quiz(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="oyunliste", description="Veritabanındaki oyunları listele (Sadece Moderatörler)")
-    async def oyunliste(self, interaction: discord.Interaction):
+    @app_commands.describe(sayfa="Sayfa numarası (varsayılan: 1)")
+    async def oyunliste(self, interaction: discord.Interaction, sayfa: int = 1):
         # Moderatör kontrolü
         if not interaction.user.guild_permissions.manage_messages:
             await interaction.response.send_message("❌ Bu komutu kullanmak için moderatör yetkisine sahip olmalısın!", ephemeral=True)
             return
         
-        async with aiosqlite.connect(self.db_path) as db:
-            cursor = await db.execute("SELECT id, name, genre, metascore FROM games LIMIT 25")
-            games = await cursor.fetchall()
-        
-        if not games:
-            await interaction.response.send_message("📋 Veritabanında henüz oyun bulunmuyor!", ephemeral=True)
+        if sayfa < 1:
+            await interaction.response.send_message("❌ Sayfa numarası 1'den küçük olamaz!", ephemeral=True)
             return
+        
+        per_page = 25
+        offset = (sayfa - 1) * per_page
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            # Toplam oyun sayısını al
+            count_cursor = await db.execute("SELECT COUNT(*) FROM games")
+            total_games = (await count_cursor.fetchone())[0]
+            
+            if total_games == 0:
+                await interaction.response.send_message("📋 Veritabanında henüz oyun bulunmuyor!", ephemeral=True)
+                return
+            
+            total_pages = math.ceil(total_games / per_page)
+            
+            if sayfa > total_pages:
+                await interaction.response.send_message(f"❌ Sadece {total_pages} sayfa var!", ephemeral=True)
+                return
+            
+            # Sayfalanmış oyunları al
+            cursor = await db.execute(
+                "SELECT id, name, genre, metascore FROM games LIMIT ? OFFSET ?",
+                (per_page, offset)
+            )
+            games = await cursor.fetchall()
         
         embed = discord.Embed(
             title="🎮 Oyun Listesi",
-            description="Veritabanındaki oyunlar (Maksimum 25)",
+            description=f"Sayfa {sayfa}/{total_pages} (Toplam {total_games} oyun)",
             color=discord.Color.blue()
         )
         
@@ -151,6 +173,8 @@ class Quiz(commands.Cog):
                 value=f"Tür: {genre} | Metascore: {metascore}",
                 inline=False
             )
+        
+        embed.set_footer(text=f"Sonraki sayfa için: /oyunliste sayfa:{sayfa + 1}")
         
         await interaction.response.send_message(embed=embed)
 
