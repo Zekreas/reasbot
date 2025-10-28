@@ -124,7 +124,6 @@ class Quiz(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
 
-    
     @app_commands.command(name="oyunliste", description="Veritabanındaki tüm oyunları listele (Sadece Moderatörler)")
     async def oyunliste(self, interaction: discord.Interaction):
         # Moderatör kontrolü
@@ -140,21 +139,32 @@ class Quiz(commands.Cog):
             await interaction.response.send_message("📋 Veritabanında henüz oyun bulunmuyor!", ephemeral=True)
             return
         
-        embed = discord.Embed(
-            title="🎮 Oyun Listesi",
-            description=f"Veritabanındaki tüm oyunlar (Toplam: {len(games)})",
-            color=discord.Color.blue()
-        )
-        
-        for game_id, name, genre, metascore in games:
-            embed.add_field(
-                name=f"ID: {game_id} - {name}",
-                value=f"Tür: {genre} | Metascore: {metascore}",
-                inline=False
+        # Her embed'de maksimum 25 field olabilir
+        embeds = []
+        for i in range(0, len(games), 25):
+            chunk = games[i:i+25]
+            embed = discord.Embed(
+                title="🎮 Oyun Listesi",
+                description=f"Toplam {len(games)} oyun",
+                color=discord.Color.blue()
             )
+            
+            for game_id, name, genre, metascore in chunk:
+                embed.add_field(
+                    name=f"ID: {game_id} - {name}",
+                    value=f"Tür: {genre} | Metascore: {metascore}",
+                    inline=False
+                )
+            
+            embeds.append(embed)
         
-        await interaction.response.send_message(embed=embed)
-    
+        # İlk embed'i interaction response olarak gönder
+        await interaction.response.send_message(embed=embeds[0])
+        
+        # Geri kalan embed'leri followup mesajlar olarak gönder
+        for embed in embeds[1:]:
+            await interaction.followup.send(embed=embed)
+
     @app_commands.command(name="oyunsil", description="ID'sine göre oyun sil (Sadece Moderatörler)")
     @app_commands.describe(game_id="Silinecek oyunun ID'si")
     async def oyunsil(self, interaction: discord.Interaction, game_id: int):
