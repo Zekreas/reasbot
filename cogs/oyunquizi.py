@@ -124,7 +124,8 @@ class Quiz(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="oyunliste", description="Veritabanındaki oyunları listele (Sadece Moderatörler)")
+    
+    @app_commands.command(name="oyunliste", description="Veritabanındaki tüm oyunları listele (Sadece Moderatörler)")
     async def oyunliste(self, interaction: discord.Interaction):
         # Moderatör kontrolü
         if not interaction.user.guild_permissions.manage_messages:
@@ -141,7 +142,7 @@ class Quiz(commands.Cog):
         
         embed = discord.Embed(
             title="🎮 Oyun Listesi",
-            description="Veritabanındaki oyunlar (Maksimum 25)",
+            description=f"Veritabanındaki tüm oyunlar (Toplam: {len(games)})",
             color=discord.Color.blue()
         )
         
@@ -153,7 +154,7 @@ class Quiz(commands.Cog):
             )
         
         await interaction.response.send_message(embed=embed)
-
+    
     @app_commands.command(name="oyunsil", description="ID'sine göre oyun sil (Sadece Moderatörler)")
     @app_commands.describe(game_id="Silinecek oyunun ID'si")
     async def oyunsil(self, interaction: discord.Interaction, game_id: int):
